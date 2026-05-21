@@ -1,64 +1,66 @@
-
 import pygame
 from constantes import *
 
-#Romerio
-class Romerio:
-    def __init__(self,x,y):
+# Classe base
+class Personagem:
+    def __init__(self, x, y, cor, teclas):
         self.pos_x = x
         self.pos_y = y
-        
-
-        def mover(self):
-            teclas = pygame.key.get_pressed()
-            if teclas[pygame.K_LEFT]:
-                self.pos_x -= VELOCIDADE
-            if teclas[pygame.K_RIGHT]:
-                self.pos_x += VELOCIDADE
-            if teclas[pygame.K_UP]:
-                self.pos_y -= VELOCIDADE
-            if teclas[pygame.K_DOWN]:
-                self.pos_y += VELOCIDADE
-
-
-            def desenhar(self,tela, ROSA):
-                pygame.draw.rect(tela, LARANJA, (200, 300), 50)
-
-            def cortar(self):
-                pass
-
-            def pegar(self):
-                pass
-
-            def largar(self):
-                pass
-
-#Brito
-class Brito:
-    def __init__(self, x, y):
-        self.pos_x = x
-        self.pos_y = y
-
+        self.cor = cor
+        self.teclas = teclas
 
     def mover(self):
-        teclas = pygame.key.get_pressed()
-        if teclas[pygame.K_A]:
+        teclas_pressionadas = pygame.key.get_pressed()
+
+        if teclas_pressionadas[self.teclas["esquerda"]]:
             self.pos_x -= VELOCIDADE
-        if teclas[pygame.K_D]:
+
+        if teclas_pressionadas[self.teclas["direita"]]:
             self.pos_x += VELOCIDADE
-        if teclas[pygame.K_W]:
+
+        if teclas_pressionadas[self.teclas["cima"]]:
             self.pos_y -= VELOCIDADE
-        if teclas[pygame.K_S]:
+
+        if teclas_pressionadas[self.teclas["baixo"]]:
             self.pos_y += VELOCIDADE
 
-        def desenhar(self,tela,AZUL):
-            pygame.draw.circle(tela, AZUL, (300, 200), 50)
+    def cortar(self):
+        pass
 
-        def cortar(self):
-            pass
+    def pegar(self):
+        pass
 
-        def pegar(self):
-            pass
+    def largar(self):
+        pass
 
-        def largar(self):
-            pass
+
+# Romerio herda Personagem
+class Romerio(Personagem):
+    def __init__(self, x, y):
+        teclas = {
+            "esquerda": pygame.K_LEFT,
+            "direita": pygame.K_RIGHT,
+            "cima": pygame.K_UP,
+            "baixo": pygame.K_DOWN
+        }
+
+        super().__init__(x, y, LARANJA, teclas)
+
+    def desenhar(self, tela):
+        pygame.draw.rect(tela, self.cor, (self.pos_x, self.pos_y, 50, 50))
+
+
+# Brito 
+class Brito(Personagem):
+    def __init__(self, x, y):
+        teclas = {
+            "esquerda": pygame.K_a,
+            "direita": pygame.K_d,
+            "cima": pygame.K_w,
+            "baixo": pygame.K_s
+        }
+
+        super().__init__(x, y, AZUL, teclas)
+
+    def desenhar(self, tela):
+        pygame.draw.circle(tela, self.cor, (self.pos_x, self.pos_y), 25)

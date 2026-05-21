@@ -1,5 +1,5 @@
 #Atributos
-VELOCIDADE = 1
+VELOCIDADE = 5
 
 #Cores
 LARANJA = (255, 165, 0)
