@@ -23,6 +23,7 @@ class Jogo:
     def menu(self):
         fonteTitulo = pygame.font.SysFont("Impact", 50)
         titulo = fonteTitulo.render("Greedy Evolution", True, AZUL)
+        
         fonteTexto = pygame.font.SysFont("Arial", 30)
         texto = fonteTexto.render("Pressione Enter para iniciar o jogo", True, AZUL)
 
