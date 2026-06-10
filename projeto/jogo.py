@@ -2,8 +2,6 @@ from constantes import *
 from player import Romerio, Brito
 import pygame
 
-import pygame
-
 class Jogo:
     def __init__(self):
         pygame.init()
