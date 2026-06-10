@@ -4,16 +4,24 @@ from constantes import *
 # Classe base
 class Personagem:
     def __init__(self, x, y, cor, teclas):
+
         self.pos_x = x
         self.pos_y = y
-        self.cor = cor
+
         self.teclas = teclas
 
+        self.velocidade = VELOCIDADE
+
+        self.sprite_sheet = pygame.image.load(sprite_pach).convert_alpha()
+
+        self.largura_sprite = self.sprite_sheet.get_width() // 3
+        self.altura_sprite = self.sprite_sheet.get_height() 
     def mover(self):
         teclas_pressionadas = pygame.key.get_pressed()
 
         if teclas_pressionadas[self.teclas["esquerda"]]:
             self.pos_x -= VELOCIDADE
+            self.direcao = "lado"
 
         if teclas_pressionadas[self.teclas["direita"]]:
             self.pos_x += VELOCIDADE
@@ -46,9 +54,13 @@ class Romerio(Personagem):
 
         super().__init__(x, y, LARANJA, teclas)
 
-    def desenhar(self, tela):
-        pygame.draw.rect(tela, self.cor, (self.pos_x, self.pos_y, 50, 50))
+        self.sprite = pygame.image.load("assets/sprites/player/Player1IdleSprite.png").convvert_alpha()
 
+
+        self.sprite = pygame.transform.scale(self.sprite,(64, 64))
+
+    def desenhar(self, tela):
+     tela.blit(self.sprite, (self.pos_x, self.pos_y))
 
 # Brito 
 class Brito(Personagem):
@@ -62,5 +74,15 @@ class Brito(Personagem):
 
         super().__init__(x, y, AZUL, teclas)
 
+
+        self.sprite = pygame.image.load(
+            "assets/sprites/player/Player2IdleSprite.png"
+        ).convert_alpha()
+
+        self.sprite = pygame.transform.scale(
+            self.sprite,
+            (64, 64)
+        )
+
     def desenhar(self, tela):
-        pygame.draw.circle(tela, self.cor, (self.pos_x, self.pos_y), 25)
+        tela.blit(self.sprite, (self.pos_x, self.pos_y))
