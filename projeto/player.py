@@ -12,7 +12,7 @@ class Personagem:
 
         self.velocidade = VELOCIDADE
 
-        self.sprite_sheet = pygame.image.load(sprite_pach).convert_alpha()
+        self.sprite_sheet = pygame.image.load(sprite_path).convert_alpha()
 
         self.largura_sprite = self.sprite_sheet.get_width() // 3
         self.altura_sprite = self.sprite_sheet.get_height() 
