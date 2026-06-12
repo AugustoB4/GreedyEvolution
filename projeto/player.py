@@ -43,7 +43,6 @@ class Personagem:
             self.pos_y += VELOCIDADE
             self.direcao = "frente"
     def desenhar(self, tela):
-
         indice = self.frames[self.direcao]
 
         area = pygame.Rect(
@@ -55,7 +54,7 @@ class Personagem:
 
         sprite = self.sprite_sheet.subsurface(area)
 
-        if self.virado_esqueda:
+        if self.virado_esquerda:
             sprite = pygame.transform.flip(sprite,True, False)
         tela.blit(
             sprite,
@@ -84,8 +83,6 @@ class Romerio(Personagem):
 
         super().__init__(x, y, "assets/sprites/player/Player1IdleSprite.png", teclas)
 
-    def desenhar(self, tela):
-     tela.blit(self.sprite, (self.pos_x, self.pos_y))
 
 # Brito 
 class Brito(Personagem):
@@ -101,5 +98,3 @@ class Brito(Personagem):
 
 
 
-    def desenhar(self, tela):
-        tela.blit(self.sprite, (self.pos_x, self.pos_y))
