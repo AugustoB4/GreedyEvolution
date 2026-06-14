@@ -1,4 +1,5 @@
 from constantes import *
+from menu import Menu
 from player import Romerio, Brito
 import pygame
 
@@ -18,7 +19,7 @@ class Jogo:
         self.rodando = True
         self.clock = pygame.time.Clock()
         
-    def menu(self):
+    '''def menu(self):
         fonteTitulo = pygame.font.SysFont("Impact", 50)
         titulo = fonteTitulo.render("Greedy Evolution", True, AZUL)
         
@@ -38,7 +39,7 @@ class Jogo:
             self.tela.fill(PRETO)
             self.tela.blit(titulo, (self.largura // 2 - titulo.get_width() // 2, self.altura // 3))
             self.tela.blit(texto, (self.largura // 2 - texto.get_width() // 2, self.altura // 2))
-            pygame.display.flip()
+            pygame.display.flip()'''
 
     def verificarEventos(self):
         for evento in pygame.event.get():
@@ -54,7 +55,9 @@ class Jogo:
         pygame.display.flip()
 
     def iniciar(self):
-        self.menu()
+        menu = Menu(self.tela,self.largura,self.altura)
+        if not menu.executar():
+            self.rodando = False
         while self.rodando == True:
             self.verificarEventos()
             self.desenhar()

@@ -30,10 +30,12 @@ class Personagem:
         if teclas_pressionadas[self.teclas["esquerda"]]:
             self.pos_x -= VELOCIDADE
             self.direcao = "lado"
+            self.virado_esquerda = False
 
         if teclas_pressionadas[self.teclas["direita"]]:
             self.pos_x += VELOCIDADE
             self.direcao = "lado"
+            self.virado_esquerda = True
 
         if teclas_pressionadas[self.teclas["cima"]]:
             self.pos_y -= VELOCIDADE
@@ -56,10 +58,9 @@ class Personagem:
 
         if self.virado_esquerda:
             sprite = pygame.transform.flip(sprite,True, False)
-        tela.blit(
-            sprite,
-            (self.pos_x, self.pos_y)
-        )
+
+        sprite = pygame.transform.scale(sprite,(64, 96))
+        tela.blit(sprite,(self.pos_x, self.pos_y))
 
     def cortar(self):
         pass
@@ -81,8 +82,7 @@ class Romerio(Personagem):
             "baixo": pygame.K_DOWN
         }
 
-        super().__init__(x, y, "assets/sprites/player/Player1IdleSprite.png", teclas)
-
+        super().__init__(x, y, "projeto/assets/sprites/player/Player1IdleSprite.png", teclas)
 
 # Brito 
 class Brito(Personagem):
@@ -94,7 +94,7 @@ class Brito(Personagem):
             "baixo": pygame.K_s
         }
 
-        super().__init__(x, y, "assets/sprites/player/Player2IdleSprite.png", teclas)
+        super().__init__(x, y, "projeto/assets/sprites/player/Player2IdleSprite.png", teclas)
 
 
 
