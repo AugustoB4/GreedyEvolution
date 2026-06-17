@@ -13,8 +13,8 @@ class Jogo:
         self.tela = pygame.display.set_mode((self.largura, self.altura))
         pygame.display.set_caption("Greedy Evolution")
 
-        self.player1 = Romerio(500, 500)
-        self.player2 = Brito(501, 501)
+        self.player1 = Romerio(750, 500)
+        self.player2 = Brito(250, 500)
 
         self.rodando = True
         self.clock = pygame.time.Clock()
@@ -50,8 +50,12 @@ class Jogo:
 
     def desenhar(self):
         self.tela.fill((PRETO))
+
         self.player1.desenhar(self.tela)
         self.player2.desenhar(self.tela)
+
+        pygame.draw.circle(self.tela, (142, 0, 0), (500,300),16)
+        
         pygame.display.flip()
 
     def iniciar(self):

@@ -9,6 +9,7 @@ class Personagem:
         self.pos_y = y
         self.teclas = teclas
         self.velocidade = VELOCIDADE
+        self.objeto = None
 
         self.sprite_sheet = pygame.image.load(sprite_path).convert_alpha()
 
@@ -65,12 +66,15 @@ class Personagem:
     def cortar(self):
         pass
 
-    def pegar(self):
-        pass
+    def pegar(self, objeto):
+        if self.objeto is None:
+            self.objeto = objeto
+            print("Caguei")
 
     def largar(self):
-        pass
-
+        if self.objeto is not None:
+            self.objeto = None
+            print("Peidei")
 
 # Romerio herda Personagem
 class Romerio(Personagem):
@@ -96,5 +100,6 @@ class Brito(Personagem):
 
         super().__init__(x, y, "projeto/assets/sprites/player/Player2IdleSprite.png", teclas)
 
-
+    def desenhar(self, tela):
+        return super().desenhar(tela)
 
