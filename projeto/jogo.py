@@ -1,6 +1,7 @@
 from constantes import *
 from menu import Menu
 from player import Romerio, Brito
+from itens import Tomate
 import pygame
 
 class Jogo:
@@ -13,6 +14,7 @@ class Jogo:
         self.tela = pygame.display.set_mode((self.largura, self.altura))
         pygame.display.set_caption("Greedy Evolution")
 
+        self.tomate = Tomate(500, 300)
         self.player1 = Romerio(750, 500)
         self.player2 = Brito(250, 500)
 
@@ -45,6 +47,8 @@ class Jogo:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 self.rodando = False
+            self.player1.verificar_habilidades(evento)
+            self.player2.verificar_habilidades(evento)
         self.player1.mover()
         self.player2.mover()
 
@@ -54,7 +58,7 @@ class Jogo:
         self.player1.desenhar(self.tela)
         self.player2.desenhar(self.tela)
 
-        pygame.draw.circle(self.tela, (142, 0, 0), (500,300),16)
+        self.tomate.desenhar(self.tela)
         
         pygame.display.flip()
 

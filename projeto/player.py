@@ -64,22 +64,35 @@ class Personagem:
         tela.blit(sprite,(self.pos_x, self.pos_y))
 
     def cortar(self):
-        pass
+         pass
 
     def pegar(self, objeto):
+            
         if self.objeto is None:
             self.objeto = objeto
-            print("Caguei")
+            print("Pegou")
 
     def largar(self):
         if self.objeto is not None:
             self.objeto = None
-            print("Peidei")
+            print("Largou")
+
+
+    def verificar_habilidades(self, evento):
+
+        if evento.type == pygame.KEYDOWN:
+
+            if evento.key == self.teclas["pegar"]:
+                print("Tentou Pegar")
+            elif evento.key == self.teclas["largar"]:
+                self.largar()
 
 # Romerio herda Personagem
 class Romerio(Personagem):
     def __init__(self, x, y):
         teclas = {
+            "pegar": pygame.K_RCTRL,
+            "largar": pygame.K_RSHIFT,
             "esquerda": pygame.K_LEFT,
             "direita": pygame.K_RIGHT,
             "cima": pygame.K_UP,
@@ -92,6 +105,8 @@ class Romerio(Personagem):
 class Brito(Personagem):
     def __init__(self, x, y):
         teclas = {
+            "pegar": pygame.K_z,
+            "largar": pygame.K_x,
             "esquerda": pygame.K_a,
             "direita": pygame.K_d,
             "cima": pygame.K_w,
