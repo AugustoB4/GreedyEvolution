@@ -8,16 +8,16 @@ class Menu:
         self.largura = largura
         self.altura = altura
         
-        self.background = pygame.image.load("projeto/assets/sprites/background/StartMenuBGSprite.png").convert()
+        self.background = pygame.image.load("projeto/assets/sprites/background/StartMenuBG.png").convert()
         self.background = pygame.transform.scale(self.background,(largura, altura))
 
-        self.titulo = pygame.image.load("projeto/assets/sprites/ui/GreedyEvolutionTitleSprite.png").convert_alpha()
+        self.titulo = pygame.image.load("projeto/assets/sprites/ui/GameTittle.png").convert_alpha()
         self.titulo = pygame.transform.scale(self.titulo,(700, 180)
 )
-        self.startButton = pygame.image.load("projeto/assets/sprites/ui/StartButtonSprite.png").convert_alpha()
+        self.startButton = pygame.image.load("projeto/assets/sprites/ui/ButtonStart.png").convert_alpha()
         self.startButton = pygame.transform.scale(self.startButton,(300, 100))
 
-        self.quitButton = pygame.image.load("projeto/assets/sprites/ui/QuitButtonSprite.png").convert_alpha()
+        self.quitButton = pygame.image.load("projeto/assets/sprites/ui/ButtonQuit.png").convert_alpha()
         self.quitButton = pygame.transform.scale(self.quitButton,(300, 100))
         
         self.tituloRect = self.titulo.get_rect(

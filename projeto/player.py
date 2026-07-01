@@ -1,4 +1,5 @@
 import pygame
+from mapa import *
 from constantes import *
 
 # Classe base
@@ -27,7 +28,7 @@ class Personagem:
 
     def mover(self):
         teclas_pressionadas = pygame.key.get_pressed()
-
+    
         if teclas_pressionadas[self.teclas["esquerda"]]:
             self.pos_x -= VELOCIDADE
             self.direcao = "lado"
@@ -45,6 +46,7 @@ class Personagem:
         if teclas_pressionadas[self.teclas["baixo"]]:
             self.pos_y += VELOCIDADE
             self.direcao = "frente"
+
     def desenhar(self, tela):
         indice = self.frames[self.direcao]
 
@@ -99,7 +101,7 @@ class Romerio(Personagem):
             "baixo": pygame.K_DOWN
         }
 
-        super().__init__(x, y, "projeto/assets/sprites/player/Player1IdleSprite.png", teclas)
+        super().__init__(x, y, "projeto/assets/sprites/player/Romerio.png", teclas)
 
 # Brito 
 class Brito(Personagem):
@@ -113,7 +115,7 @@ class Brito(Personagem):
             "baixo": pygame.K_s
         }
 
-        super().__init__(x, y, "projeto/assets/sprites/player/Player2IdleSprite.png", teclas)
+        super().__init__(x, y, "projeto/assets/sprites/player/Brito.png", teclas)
 
     def desenhar(self, tela):
         return super().desenhar(tela)

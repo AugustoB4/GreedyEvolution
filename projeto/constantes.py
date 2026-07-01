@@ -10,3 +10,6 @@ AZUL = (0, 0, 255)
 #Medidas da tela
 LARGURA = 1000
 ALTURA = 600
+
+#Medidas especiais
+TILE_SIZE = 32
