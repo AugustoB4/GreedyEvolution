@@ -5,6 +5,20 @@ MAPA = [
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
     "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
+    "WFFFFFFFFFFFFFFFFFFFFFFFFFFFFFW",
     "WFCCCCCCCCCCCCCCCCCCCCCCCCCCFFW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
 ]
@@ -12,9 +26,9 @@ MAPA = [
 class Mapa:
     def __init__(self):
         self.tiles = {
-            'F': pygame.image.load("projeto/assets/sprites/tiles/floor.png").convert_alpha(),
-            'W': pygame.image.load("projeto/assets/sprites/tiles/wall.png").convert_alpha(),
-            'C': pygame.image.load("projeto/assets/sprites/tiles/counter0.png").convert_alpha()
+            'F': pygame.image.load("projeto/assets/sprites/tiles/Floor.png").convert_alpha(),
+            'W': pygame.image.load("projeto/assets/sprites/tiles/Wall.png").convert_alpha(),
+            'C': pygame.image.load("projeto/assets/sprites/tiles/CounterUp.png").convert_alpha()
         }
 
     def desenhar(self, tela):

@@ -2,6 +2,7 @@ from constantes import *
 from menu import Menu
 from player import Romerio, Brito
 from itens import Tomate
+from mapa import Mapa
 import pygame
 
 class Jogo:
@@ -13,6 +14,8 @@ class Jogo:
 
         self.tela = pygame.display.set_mode((self.largura, self.altura))
         pygame.display.set_caption("Greedy Evolution")
+
+        self.mapa = Mapa()
 
         self.background = pygame.image.load("projeto/assets/sprites/background/StartMenuBG.png").convert()
         self.background = pygame.transform.scale(self.background,(self.largura, self.altura))
@@ -37,6 +40,7 @@ class Jogo:
 
     def desenhar(self):
         self.tela.fill(PRETO)
+        self.mapa.desenhar(self.tela)
         self.player1.desenhar(self.tela)
         self.player2.desenhar(self.tela)
 
