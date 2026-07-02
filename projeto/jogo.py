@@ -21,8 +21,8 @@ class Jogo:
         self.background = pygame.transform.scale(self.background,(self.largura, self.altura))
 
         self.tomate = Tomate(500, 300)
-        self.player1 = Romerio(750, 500)
-        self.player2 = Brito(250, 500)
+        self.player1 = Romerio(750, 200)
+        self.player2 = Brito(250, 200)
 
         self.rodando = True
         self.clock = pygame.time.Clock()

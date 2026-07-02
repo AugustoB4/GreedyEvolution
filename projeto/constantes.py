@@ -12,4 +12,4 @@ LARGURA = 1000
 ALTURA = 600
 
 #Medidas especiais
-TILE_SIZE = 32
+TILE_SIZE = 48
