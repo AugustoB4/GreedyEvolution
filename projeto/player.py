@@ -81,9 +81,7 @@ class Personagem:
 
 
     def verificar_habilidades(self, evento):
-
         if evento.type == pygame.KEYDOWN:
-
             if evento.key == self.teclas["pegar"]:
                 print("Tentou Pegar")
             elif evento.key == self.teclas["largar"]:

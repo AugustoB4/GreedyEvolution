@@ -1,4 +1,5 @@
 import pygame
+from constantes import VERMELHO
 
 class Tomate:
 
@@ -8,7 +9,7 @@ class Tomate:
         self.y = y
         self.raio = 16
 
-        self.cor = (200, 0, 0)
+        self.cor = (VERMELHO)
 
     def desenhar(self, tela):
 

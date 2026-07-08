@@ -35,19 +35,6 @@ class Jogo:
             self.player2.verificar_habilidades(evento)
         self.player1.mover()
         self.player2.mover()
-        if evento.type == pygame.KEYDOWN:
-
-            if evento.key == self.player1.teclas["pegar"]:
-                self.player1.pegar(self.tomate)
-
-            if evento.key == self.player2.teclas["pegar"]:
-                self.player2.pegar(self.tomate)
-
-        if abs(self.player1.pos_x - self.tomate.x) < 40 and \
-           abs(self.player1.pos_y - self.tomate.y) < 40:
-
-            self.player1.pegar(self.tomate)
-
     
 
     def desenhar(self):
