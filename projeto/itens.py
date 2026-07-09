@@ -8,6 +8,7 @@ class Tomate:
         self.x = x
         self.y = y
         self.raio = 16
+        self.dono = None
 
         self.cor = (VERMELHO)
 

@@ -50,6 +50,10 @@ class Personagem:
         if teclas_pressionadas[self.teclas["baixo"]]:
             dirY = VELOCIDADE
             self.direcao = "frente"
+        if self.objeto:
+
+           self.objeto.x = self.pos_x + 20
+           self.objeto.y = self.pos_y
 
         self.rect.x += dirX
 
@@ -95,21 +99,33 @@ class Personagem:
          pass
 
     def pegar(self, objeto):
+        if self.objeto:
+            print("estou carregando a comida")
+
+        distancia_x = abs(self.pos_x - objeto.x)
+        distancia_y = abs(self.pos_y - objeto.y)
+
+        if distancia_x < 50 and distancia_y < 50:
+
             
-        if self.objeto is None:
-            self.objeto = objeto
-            print("Pegou")
+         if objeto.dono is None:
+             objeto.dono = self
+             self.objeto = objeto
+             print("Pegou")
 
     def largar(self):
-        if self.objeto is not None:
+        if self.objeto:
+            self.objeto.x = self.pos_x
+            self.objeto.y = self.pos_y
+            self.objeto.dono = None
             self.objeto = None
-            print("Largou")
+        print("Largou")
 
 
-    def verificar_habilidades(self, evento):
+    def verificar_habilidades(self, evento, tomate):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
-                print("Tentou Pegar")
+                self.pegar(tomate)
             elif evento.key == self.teclas["largar"]:
                 self.largar()
 

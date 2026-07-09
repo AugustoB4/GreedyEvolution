@@ -32,8 +32,8 @@ class Jogo:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 self.rodando = False
-            self.player1.verificar_habilidades(evento)
-            self.player2.verificar_habilidades(evento)
+            self.player1.verificar_habilidades(evento, self.tomate)
+            self.player2.verificar_habilidades(evento, self.tomate)
         self.player1.mover(self.mapa.colisoes)
         self.player2.mover(self.mapa.colisoes)
     
