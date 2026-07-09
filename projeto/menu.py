@@ -76,4 +76,6 @@ class Menu:
                   if self.quitRect.collidepoint(evento.pos):
                       return False
             self.desenhar()         
+
+
     

@@ -16,6 +16,7 @@ class Jogo:
         pygame.display.set_caption("Greedy Evolution")
 
         self.mapa = Mapa()
+        self.mapa.criar_colisoes()
 
         self.background = pygame.image.load("projeto/assets/sprites/background/StartMenuBG.png").convert()
         self.background = pygame.transform.scale(self.background,(self.largura, self.altura))
@@ -33,8 +34,8 @@ class Jogo:
                 self.rodando = False
             self.player1.verificar_habilidades(evento)
             self.player2.verificar_habilidades(evento)
-        self.player1.mover()
-        self.player2.mover()
+        self.player1.mover(self.mapa.colisoes)
+        self.player2.mover(self.mapa.colisoes)
     
 
     def desenhar(self):

@@ -17,6 +17,8 @@ class Personagem:
         self.largura_sprite = self.sprite_sheet.get_width() // 3
         self.altura_sprite = self.sprite_sheet.get_height()
 
+        self.rect = pygame.Rect(self.pos_x + 16, self.pos_y + 76, 32, 20)
+
         self.direcao = "frente"
         self.virado_esquerda = False
 
@@ -26,26 +28,50 @@ class Personagem:
             "costas": 2
         }
 
-    def mover(self):
+    def mover(self, colisoes):
         teclas_pressionadas = pygame.key.get_pressed()
-    
+        dirX = 0
+        dirY = 0
+
         if teclas_pressionadas[self.teclas["esquerda"]]:
-            self.pos_x -= VELOCIDADE
+            dirX = -VELOCIDADE
             self.direcao = "lado"
             self.virado_esquerda = False
 
         if teclas_pressionadas[self.teclas["direita"]]:
-            self.pos_x += VELOCIDADE
+            dirX = VELOCIDADE
             self.direcao = "lado"
             self.virado_esquerda = True
 
         if teclas_pressionadas[self.teclas["cima"]]:
-            self.pos_y -= VELOCIDADE
+            dirY = -VELOCIDADE
             self.direcao = "costas"
 
         if teclas_pressionadas[self.teclas["baixo"]]:
-            self.pos_y += VELOCIDADE
+            dirY = VELOCIDADE
             self.direcao = "frente"
+
+        self.rect.x += dirX
+
+        for parede in colisoes:
+             if self.rect.colliderect(parede):
+                if dirX > 0:
+                    self.rect.right = parede.left
+                elif dirX < 0:
+                    self.rect.left = parede.right
+
+    # Movimento Y
+        self.rect.y += dirY
+
+        for parede in colisoes:
+            if self.rect.colliderect(parede):
+                if dirY > 0:
+                    self.rect.bottom = parede.top
+                elif dirY < 0:
+                    self.rect.top = parede.bottom
+
+        self.pos_x = self.rect.x - 16
+        self.pos_y = self.rect.y - 76
 
     def desenhar(self, tela):
         indice = self.frames[self.direcao]
