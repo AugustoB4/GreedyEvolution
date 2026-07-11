@@ -3,17 +3,17 @@ from constantes import TILE_SIZE
 
 MAPA = [
     "WWWWWWWWWWWWWWWWWWWWW",
-    "WFFFFF22S222B22FFFFFW",
-    "WFFFFFFFFFFFFFFFFFFFW",
-    "WFFFFFFFFFFFFFFFFFFFW",
-    "WFFFFFFFFFFFFFFFFFFFW",
-    "WFFFFFFFFFFFFFFFFFFFW",
-    "WFFFFFFFFFFFFFFFFFFFW",
-    "WFFFFF222222221FFFFFW",
-    "WFFFFFFFFFFFFF1FFFFFW",
-    "WFFFFFFFFFFFFF1FFFFFW",
-    "WFFFFFFFFFFFFF2FFFFFW",
-    "WFFFFFFFFFFFFFFFFFFFW",
+    "W1S2B22332122222B222W",
+    "W1FFFFFFFF1FFFFFFFFFW",
+    "W1FFFFFFFF1FFFFFFFFFW",
+    "W1FF2332FF2FFFFFFFFFW",
+    "W1FFFFFFFFFFFFFFFFFFW",
+    "W1FFFFFFFFFFFFFFFFFFW",
+    "W1FFFFFFFFFFFFFFFFFFF",
+    "W1FF2332FF1FFFFFFFFFF",
+    "W1FFFFFFFF1FFFFFFFFFW",
+    "W1FFFFFFFF1FFFFFFFFFW",
+    "W1111111111111111111W",
     "WWWWWWWWWWWWWWWWWWWWW",
 ]
 
@@ -24,6 +24,7 @@ class Mapa:
             'W': pygame.image.load("projeto/assets/sprites/tiles/Wall.png").convert_alpha(),
             '1': pygame.image.load("projeto/assets/sprites/tiles/CounterUp.png").convert_alpha(),
             '2': pygame.image.load("projeto/assets/sprites/tiles/CounterFront.png").convert_alpha(),
+            '3': pygame.image.load("projeto/assets/sprites/tiles/CounterFront2.png").convert_alpha(),
             'S': pygame.image.load("projeto/assets/sprites/tiles/Sink.png").convert_alpha(),
             'B': pygame.image.load("projeto/assets/sprites/tiles/CuttingBoard.png").convert_alpha()
         }
@@ -38,7 +39,7 @@ class Mapa:
         self.colisoes.clear()
         for linha, texto in enumerate(MAPA):
             for coluna, letra in enumerate(texto):
-                if letra in ("1","2","B","C", "W", "S"):
+                if letra in ("1","2","3","B","C", "W", "S"):
                     self.colisoes.append(
                         pygame.Rect(
                             coluna * TILE_SIZE,

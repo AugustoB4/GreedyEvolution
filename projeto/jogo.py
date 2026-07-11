@@ -36,6 +36,7 @@ class Jogo:
             self.player2.verificar_habilidades(evento, self.tomate)
         self.player1.mover(self.mapa.colisoes)
         self.player2.mover(self.mapa.colisoes)
+        self.tomate.atualizar()
     
 
     def desenhar(self):
@@ -43,7 +44,6 @@ class Jogo:
         self.mapa.desenhar(self.tela)
         self.player1.desenhar(self.tela)
         self.player2.desenhar(self.tela)
-
         self.tomate.desenhar(self.tela)
         
         pygame.display.flip()

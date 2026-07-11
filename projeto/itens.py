@@ -1,22 +1,34 @@
 import pygame
 from constantes import VERMELHO
 
-class Tomate:
+import pygame
 
-    def __init__(self, x, y):
+class Ingrediente:
+    def __init__(self, x, y, sprite_path):
 
         self.x = x
         self.y = y
-        self.raio = 16
+
+        self.sprite = pygame.image.load(sprite_path).convert_alpha()
+        self.sprite = pygame.transform.scale(self.sprite, (32, 32))
+
+        self.rect = self.sprite.get_rect(topleft=(self.x, self.y))
+
         self.dono = None
 
-        self.cor = (VERMELHO)
+    def atualizar(self):
+        if self.dono:
+            self.x = self.dono.pos_x + 16
+            self.y = self.dono.pos_y - 20
+        self.rect.topleft = (self.x, self.y)
 
     def desenhar(self, tela):
+        tela.blit(self.sprite, (self.x, self.y))
 
-        pygame.draw.circle(
-            tela,
-            self.cor,
-            (self.x, self.y),
-            self.raio
-        )
+class Tomate(Ingrediente):
+    def __init__(self, x, y):
+        super().__init__(x,y,"projeto/assets/sprites/ingredients/Tomato.png")
+
+class Queijo(Ingrediente):
+    def __init__(self, x, y):
+        super().__init__( x, y,"projeto/assets/sprites/ingredients/Cheese.png")

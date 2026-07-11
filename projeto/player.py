@@ -50,10 +50,6 @@ class Personagem:
         if teclas_pressionadas[self.teclas["baixo"]]:
             dirY = VELOCIDADE
             self.direcao = "frente"
-        if self.objeto:
-
-           self.objeto.x = self.pos_x + 20
-           self.objeto.y = self.pos_y
 
         self.rect.x += dirX
 
@@ -64,7 +60,7 @@ class Personagem:
                 elif dirX < 0:
                     self.rect.left = parede.right
 
-    # Movimento Y
+
         self.rect.y += dirY
 
         for parede in colisoes:
@@ -95,37 +91,48 @@ class Personagem:
         sprite = pygame.transform.scale(sprite,(64, 96))
         tela.blit(sprite,(self.pos_x, self.pos_y))
 
+    def area_interacao(self):
+        if self.direcao == "frente":
+            area = pygame.Rect( self.rect.x, self.rect.bottom, self.rect.width, TILE_SIZE)
+
+        elif self.direcao == "costas":
+            area = pygame.Rect(self.rect.x, self.rect.top - 30, self.rect.width, TILE_SIZE)
+
+        elif self.direcao == "lado":
+            if self.virado_esquerda:
+                area = pygame.Rect( self.rect.right, self.rect.y, TILE_SIZE, self.rect.height)
+            else:
+                area = pygame.Rect( self.rect.left - 30, self.rect.y, TILE_SIZE, self.rect.height)
+        return area
+
     def cortar(self):
          pass
 
-    def pegar(self, objeto):
-        if self.objeto:
-            print("estou carregando a comida")
-
-        distancia_x = abs(self.pos_x - objeto.x)
-        distancia_y = abs(self.pos_y - objeto.y)
-
-        if distancia_x < 50 and distancia_y < 50:
-
-            
-         if objeto.dono is None:
-             objeto.dono = self
-             self.objeto = objeto
-             print("Pegou")
+    def pegar(self, ingrediente):
+                area = self.area_interacao()
+                if self.objeto:
+                    return
+                if area.colliderect(ingrediente.rect):
+                    if ingrediente.dono is None:
+                        ingrediente.dono = self
+                        self.objeto = ingrediente
 
     def largar(self):
-        if self.objeto:
-            self.objeto.x = self.pos_x
-            self.objeto.y = self.pos_y
-            self.objeto.dono = None
-            self.objeto = None
-        print("Largou")
+        if not self.objeto:
+            return
+        area = self.area_interacao()
+        self.objeto.dono = None
+        self.objeto.x = area.centerx - self.objeto.rect.width // 2
+        self.objeto.y = area.centery - self.objeto.rect.height // 2
+        self.objeto.rect.topleft = (self.objeto.x, self.objeto.y)
+        self.objeto = None
 
 
-    def verificar_habilidades(self, evento, tomate):
+    def verificar_habilidades(self, evento, ingrediente):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
-                self.pegar(tomate)
+                self.pegar(ingrediente)
+
             elif evento.key == self.teclas["largar"]:
                 self.largar()
 

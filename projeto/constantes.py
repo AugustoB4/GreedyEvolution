@@ -14,3 +14,4 @@ ALTURA = 600
 
 #Medidas especiais
 TILE_SIZE = 48
+OFFSET = 40
