@@ -4,6 +4,7 @@ from player import Romerio, Brito
 from itens import Tomate
 from mapa import Mapa
 import pygame
+from sons import som_inicial
 
 class Jogo:
     def __init__(self):
@@ -14,6 +15,8 @@ class Jogo:
 
         self.tela = pygame.display.set_mode((self.largura, self.altura))
         pygame.display.set_caption("Greedy Evolution")
+        som_inicial.play()
+
 
         self.mapa = Mapa()
         self.mapa.criar_colisoes()
