@@ -1,8 +1,6 @@
 import pygame
 from constantes import VERMELHO
 
-import pygame
-
 class Ingrediente:
     def __init__(self, x, y, sprite_path):
 
@@ -28,7 +26,17 @@ class Ingrediente:
 class Tomate(Ingrediente):
     def __init__(self, x, y):
         super().__init__(x,y,"projeto/assets/sprites/ingredients/Tomato.png")
+        self.corte = True
+        self.cortado = False
 
 class Queijo(Ingrediente):
     def __init__(self, x, y):
         super().__init__( x, y,"projeto/assets/sprites/ingredients/Cheese.png")
+        self.corte = True
+        self.cortado = False
+
+class Pao(Ingrediente):
+    def __init__(self, x, y):
+        super().__init__(x, y, "projeto/assets/sprites/ingredients/Bread.png")
+        self.corte = True
+        self.cortado = False

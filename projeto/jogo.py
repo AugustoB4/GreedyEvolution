@@ -1,6 +1,6 @@
 from constantes import *
 from menu import Menu
-from player import Romerio, Brito
+from player import Romerio, Brito, Personagem
 from itens import Tomate
 from mapa import Mapa
 import pygame

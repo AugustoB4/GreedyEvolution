@@ -91,6 +91,8 @@ class Personagem:
         sprite = pygame.transform.scale(sprite,(64, 96))
         tela.blit(sprite,(self.pos_x, self.pos_y))
 
+        pygame.draw.rect(tela, (255, 0, 0), self.area_interacao(), 2)
+
     def area_interacao(self):
         if self.direcao == "frente":
             area = pygame.Rect( self.rect.x, self.rect.bottom, self.rect.width, TILE_SIZE)
@@ -105,17 +107,21 @@ class Personagem:
                 area = pygame.Rect( self.rect.left - 30, self.rect.y, TILE_SIZE, self.rect.height)
         return area
 
-    def cortar(self):
-         pass
-
     def pegar(self, ingrediente):
-                area = self.area_interacao()
-                if self.objeto:
-                    return
-                if area.colliderect(ingrediente.rect):
-                    if ingrediente.dono is None:
-                        ingrediente.dono = self
-                        self.objeto = ingrediente
+        area = self.area_interacao()
+        if self.objeto:
+            return
+        if area.colliderect(ingrediente.rect):
+            if ingrediente.dono is None:
+                ingrediente.dono = self
+                self.objeto = ingrediente
+
+    def cortar(self, ingrediente):
+        if ingrediente.corte == True:
+            if ingrediente.cortado == False:
+                for evento in pygame.event:
+                    if evento.type ==  pygame.KEYDOWN:
+                        pass
 
     def largar(self):
         if not self.objeto:
@@ -142,6 +148,7 @@ class Romerio(Personagem):
         teclas = {
             "pegar": pygame.K_RCTRL,
             "largar": pygame.K_RSHIFT,
+            "cortar": pygame.K_RSHIFT,
             "esquerda": pygame.K_LEFT,
             "direita": pygame.K_RIGHT,
             "cima": pygame.K_UP,
@@ -150,12 +157,14 @@ class Romerio(Personagem):
 
         super().__init__(x, y, "projeto/assets/sprites/player/Romerio.png", teclas)
 
+
 # Brito 
 class Brito(Personagem):
     def __init__(self, x, y):
         teclas = {
             "pegar": pygame.K_z,
             "largar": pygame.K_x,
+            "cortar": pygame.K_x,
             "esquerda": pygame.K_a,
             "direita": pygame.K_d,
             "cima": pygame.K_w,
