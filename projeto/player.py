@@ -1,10 +1,17 @@
+
+import os
 import pygame
+
 from mapa import *
 from itens import Ingrediente
 from constantes import *
+from caminhos import PLAYER_DIR
+
 
 # Classe base
+
 class Personagem:
+
     def __init__(self, x, y, sprite_path, teclas):
 
         self.pos_x = x
@@ -15,10 +22,18 @@ class Personagem:
 
         self.sprite_sheet = pygame.image.load(sprite_path).convert_alpha()
 
-        self.largura_sprite = self.sprite_sheet.get_width() // 3
-        self.altura_sprite = self.sprite_sheet.get_height()
+        self.largura_sprite = (self.sprite_sheet.get_width() // 3)
 
-        self.rect = pygame.Rect(self.pos_x + 16, self.pos_y + 76, 32, 20)
+        self.altura_sprite = (
+            self.sprite_sheet.get_height()
+        )
+
+        self.rect = pygame.Rect(
+            self.pos_x + 16,
+            self.pos_y + 76,
+            32,
+            20
+        )
 
         self.direcao = "frente"
         self.virado_esquerda = False
@@ -31,6 +46,7 @@ class Personagem:
 
     def mover(self, colisoes):
         teclas_pressionadas = pygame.key.get_pressed()
+
         dirX = 0
         dirY = 0
 
@@ -55,19 +71,21 @@ class Personagem:
         self.rect.x += dirX
 
         for parede in colisoes:
-             if self.rect.colliderect(parede):
+            if self.rect.colliderect(parede):
                 if dirX > 0:
                     self.rect.right = parede.left
+
                 elif dirX < 0:
                     self.rect.left = parede.right
-
 
         self.rect.y += dirY
 
         for parede in colisoes:
             if self.rect.colliderect(parede):
+
                 if dirY > 0:
                     self.rect.bottom = parede.top
+
                 elif dirY < 0:
                     self.rect.top = parede.bottom
 
@@ -81,37 +99,77 @@ class Personagem:
             indice * self.largura_sprite,
             0,
             self.largura_sprite,
-            self. altura_sprite
+            self.altura_sprite
         )
 
         sprite = self.sprite_sheet.subsurface(area)
 
         if self.virado_esquerda:
-            sprite = pygame.transform.flip(sprite,True, False)
+            sprite = pygame.transform.flip(
+                sprite,
+                True,
+                False
+            )
 
-        sprite = pygame.transform.scale(sprite,(64, 96))
-        tela.blit(sprite,(self.pos_x, self.pos_y))
+        sprite = pygame.transform.scale(
+            sprite,
+            (64, 96)
+        )
 
-        pygame.draw.rect(tela, (255, 0, 0), self.area_interacao(), 2)
+        tela.blit(
+            sprite,
+            (self.pos_x, self.pos_y)
+        )
+
+        pygame.draw.rect(
+            tela,
+            (255, 0, 0),
+            self.area_interacao(),
+            2
+        )
 
     def area_interacao(self):
         if self.direcao == "frente":
-            area = pygame.Rect( self.rect.x, self.rect.bottom, self.rect.width, TILE_SIZE)
+            area = pygame.Rect(
+                self.rect.x,
+                self.rect.bottom,
+                self.rect.width,
+                TILE_SIZE
+            )
 
         elif self.direcao == "costas":
-            area = pygame.Rect(self.rect.x, self.rect.top - 30, self.rect.width, TILE_SIZE)
+            area = pygame.Rect(
+                self.rect.x,
+                self.rect.top - 30,
+                self.rect.width,
+                TILE_SIZE
+            )
 
         elif self.direcao == "lado":
             if self.virado_esquerda:
-                area = pygame.Rect( self.rect.right, self.rect.y, TILE_SIZE, self.rect.height)
+                area = pygame.Rect(
+                    self.rect.right,
+                    self.rect.y,
+                    TILE_SIZE,
+                    self.rect.height
+                )
+
             else:
-                area = pygame.Rect( self.rect.left - 30, self.rect.y, TILE_SIZE, self.rect.height)
+                area = pygame.Rect(
+                    self.rect.left - 30,
+                    self.rect.y,
+                    TILE_SIZE,
+                    self.rect.height
+                )
+
         return area
 
     def pegar(self, ingrediente):
         area = self.area_interacao()
+
         if self.objeto:
             return
+
         if area.colliderect(ingrediente.rect):
             if ingrediente.dono is None:
                 ingrediente.dono = self
@@ -119,9 +177,10 @@ class Personagem:
 
     def cortar(self, ingrediente, tabuas):
         for tabua in tabuas:
-            if ingrediente.corte and ingrediente.rect.colliderect(tabua.rect):
+
+            if (ingrediente.corte and ingrediente.rect.colliderect(tabua.rect)):
                 if ingrediente.cortado == False:
-                        ingrediente.cortar_ingrediente(tabua.rect)
+                    ingrediente.cortar_ingrediente()
 
     def largar(self):
         if not self.objeto:
@@ -138,21 +197,14 @@ class Personagem:
         if coluna < 0 or coluna >= len(MAPA[linha]):
             return
 
-        centro_x = coluna * TILE_SIZE + TILE_SIZE // 2
-        centro_y = linha * TILE_SIZE + TILE_SIZE // 2
+        centro_x = (coluna * TILE_SIZE + TILE_SIZE // 2)
+        centro_y = (linha * TILE_SIZE + TILE_SIZE // 2)
 
         self.objeto.dono = None
-
-        self.objeto.x = centro_x - self.objeto.rect.width // 2
-        self.objeto.y = centro_y - self.objeto.rect.height // 2
-
-        self.objeto.rect.topleft = (
-            self.objeto.x,
-            self.objeto.y
-        )
-
+        self.objeto.x = (centro_x - self.objeto.rect.width // 2)
+        self.objeto.y = (centro_y - self.objeto.rect.height // 2)
+        self.objeto.rect.topleft = (self.objeto.x, self.objeto.y)
         self.objeto = None
-
 
     def verificar_habilidades(self, evento, ingrediente):
         if evento.type == pygame.KEYDOWN:
@@ -164,8 +216,6 @@ class Personagem:
 
             elif evento.key == self.teclas["cortar"]:
                 pass
-
-# Romerio herda Personagem
 class Romerio(Personagem):
     def __init__(self, x, y):
         teclas = {
@@ -177,11 +227,8 @@ class Romerio(Personagem):
             "cima": pygame.K_UP,
             "baixo": pygame.K_DOWN
         }
+        super().__init__(x, y, os.path.join(PLAYER_DIR,"Romerio.png"),teclas)
 
-        super().__init__(x, y, "projeto/assets/sprites/player/Romerio.png", teclas)
-
-
-# Brito 
 class Brito(Personagem):
     def __init__(self, x, y):
         teclas = {
@@ -194,7 +241,7 @@ class Brito(Personagem):
             "baixo": pygame.K_s
         }
 
-        super().__init__(x, y, "projeto/assets/sprites/player/Brito.png", teclas)
+        super().__init__(x, y, os.path.join(PLAYER_DIR, "Brito.png"),teclas)
 
     def desenhar(self, tela):
         return super().desenhar(tela)

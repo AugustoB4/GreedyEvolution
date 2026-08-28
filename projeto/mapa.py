@@ -1,5 +1,9 @@
+import os
 import pygame
+
 from constantes import TILE_SIZE
+from caminhos import TILES_DIR
+
 
 MAPA = [
     "WYIIIIIIIIIIIIIIIIIYW",
@@ -17,28 +21,28 @@ MAPA = [
     "WWWWWWWWWWWWWWWWWWWWW",
 ]
 
+
 class Tabua:
     def __init__(self, x, y):
         self.posX = x
         self.posY = y
 
         self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
-
-
 class Mapa:
     def __init__(self):
         self.tabuas = []
         self.tiles = {
-            'F': pygame.image.load("projeto/assets/sprites/tiles/Floor.png").convert_alpha(),
-            'W': pygame.image.load("projeto/assets/sprites/tiles/Wall.png").convert_alpha(),
-            '1': pygame.image.load("projeto/assets/sprites/tiles/CounterUp.png").convert_alpha(),
-            '2': pygame.image.load("projeto/assets/sprites/tiles/CounterFront.png").convert_alpha(),
-            '3': pygame.image.load("projeto/assets/sprites/tiles/CounterFront2.png").convert_alpha(),
-            'S': pygame.image.load("projeto/assets/sprites/tiles/Sink.png").convert_alpha(),
-            'B': pygame.image.load("projeto/assets/sprites/tiles/CuttingBoard.png").convert_alpha(),
-            'Y': pygame.image.load("projeto/assets/sprites/tiles/RightWindow.png").convert_alpha(),
-            'I': pygame.image.load("projeto/assets/sprites/tiles/MiddleWindow.png").convert_alpha(),
-            'T': pygame.image.load("projeto/assets/sprites/tiles/TreadMill.png").convert_alpha(),
+
+            'F': pygame.image.load(os.path.join(TILES_DIR, "Floor.png")).convert_alpha(),
+            'W': pygame.image.load(os.path.join(TILES_DIR, "Wall.png")).convert_alpha(),
+            '1': pygame.image.load(os.path.join(TILES_DIR, "CounterUp.png")).convert_alpha(),
+            '2': pygame.image.load(os.path.join(TILES_DIR, "CounterFront.png")).convert_alpha(),
+            '3': pygame.image.load(os.path.join(TILES_DIR, "CounterFront2.png")).convert_alpha(),
+            'S': pygame.image.load(os.path.join(TILES_DIR, "Sink.png")).convert_alpha(),
+            'B': pygame.image.load(os.path.join(TILES_DIR, "CuttingBoard.png")).convert_alpha(),
+            'Y': pygame.image.load(os.path.join(TILES_DIR, "RightWindow.png")).convert_alpha(),
+            'I': pygame.image.load(os.path.join(TILES_DIR, "MiddleWindow.png")).convert_alpha(),
+            'T': pygame.image.load(os.path.join(TILES_DIR, "TreadMill.png")).convert_alpha(),
         }
 
     def desenhar(self, tela):
@@ -55,7 +59,7 @@ class Mapa:
         self.colisoes.clear()
         for linha, texto in enumerate(MAPA):
             for coluna, letra in enumerate(texto):
-                if letra in ("1","2","3","B","C", "W", "S"):
+                if letra in ("1", "2", "3", "B", "C", "W", "S"):
                     self.colisoes.append(
                         pygame.Rect(
                             coluna * TILE_SIZE,
@@ -64,11 +68,13 @@ class Mapa:
                             TILE_SIZE
                         )
                     )
+
                 if letra == "B":
                     x = coluna * TILE_SIZE
                     y = linha * TILE_SIZE
 
                     self.tabuas.append(Tabua(x, y))
+
     def pode_largar(self, x, y):
         coluna = x // TILE_SIZE
         linha = y // TILE_SIZE
@@ -79,5 +85,5 @@ class Mapa:
         if coluna < 0 or coluna >= len(MAPA[linha]):
             return False
 
-        return MAPA[linha][coluna] in ("F", "B", "1", "2", "3")
-     
+        return MAPA[linha][coluna] in ("F", "B","1", "2", "3")
+
