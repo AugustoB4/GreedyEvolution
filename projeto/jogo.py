@@ -1,7 +1,7 @@
 from constantes import *
 from menu import Menu
-from player import Romerio, Brito, Personagem
-from itens import Tomate
+from player import Romerio, Brito
+from itens import *
 from mapa import Mapa
 import pygame
 from sons import som_inicial
@@ -25,6 +25,7 @@ class Jogo:
         self.background = pygame.transform.scale(self.background,(self.largura, self.altura))
 
         self.tomate = Tomate(500, 300)
+        self.queijo = Queijo(450, 300)
         self.player1 = Romerio(750, 200)
         self.player2 = Brito(250, 200)
 
@@ -37,9 +38,12 @@ class Jogo:
                 self.rodando = False
             self.player1.verificar_habilidades(evento, self.tomate)
             self.player2.verificar_habilidades(evento, self.tomate)
+            self.player1.verificar_habilidades(evento, self.queijo)
+            self.player2.verificar_habilidades(evento, self.queijo)
         self.player1.mover(self.mapa.colisoes)
         self.player2.mover(self.mapa.colisoes)
         self.tomate.atualizar()
+        self.queijo.atualizar()
     
 
     def desenhar(self):
@@ -48,6 +52,7 @@ class Jogo:
         self.player1.desenhar(self.tela)
         self.player2.desenhar(self.tela)
         self.tomate.desenhar(self.tela)
+        self.queijo.desenhar(self.tela)
         
         pygame.display.flip()
 

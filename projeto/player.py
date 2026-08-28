@@ -1,5 +1,6 @@
 import pygame
 from mapa import *
+from itens import Ingrediente
 from constantes import *
 
 # Classe base
@@ -116,21 +117,40 @@ class Personagem:
                 ingrediente.dono = self
                 self.objeto = ingrediente
 
-    def cortar(self, ingrediente):
-        if ingrediente.corte == True:
-            if ingrediente.cortado == False:
-                for evento in pygame.event:
-                    if evento.type ==  pygame.KEYDOWN:
-                        pass
+    def cortar(self, ingrediente, tabuas):
+        for tabua in tabuas:
+            if ingrediente.corte and ingrediente.rect.colliderect(tabua.rect):
+                if ingrediente.cortado == False:
+                        ingrediente.cortar_ingrediente(tabua.rect)
 
     def largar(self):
         if not self.objeto:
             return
+
         area = self.area_interacao()
+
+        coluna = area.centerx // TILE_SIZE
+        linha = area.centery // TILE_SIZE
+
+        if linha < 0 or linha >= len(MAPA):
+            return
+
+        if coluna < 0 or coluna >= len(MAPA[linha]):
+            return
+
+        centro_x = coluna * TILE_SIZE + TILE_SIZE // 2
+        centro_y = linha * TILE_SIZE + TILE_SIZE // 2
+
         self.objeto.dono = None
-        self.objeto.x = area.centerx - self.objeto.rect.width // 2
-        self.objeto.y = area.centery - self.objeto.rect.height // 2
-        self.objeto.rect.topleft = (self.objeto.x, self.objeto.y)
+
+        self.objeto.x = centro_x - self.objeto.rect.width // 2
+        self.objeto.y = centro_y - self.objeto.rect.height // 2
+
+        self.objeto.rect.topleft = (
+            self.objeto.x,
+            self.objeto.y
+        )
+
         self.objeto = None
 
 
@@ -142,13 +162,16 @@ class Personagem:
             elif evento.key == self.teclas["largar"]:
                 self.largar()
 
+            elif evento.key == self.teclas["cortar"]:
+                pass
+
 # Romerio herda Personagem
 class Romerio(Personagem):
     def __init__(self, x, y):
         teclas = {
-            "pegar": pygame.K_RCTRL,
-            "largar": pygame.K_RSHIFT,
-            "cortar": pygame.K_RSHIFT,
+            "pegar": pygame.K_RSHIFT,
+            "largar": pygame.K_RCTRL,
+            "cortar": pygame.K_SEMICOLON,
             "esquerda": pygame.K_LEFT,
             "direita": pygame.K_RIGHT,
             "cima": pygame.K_UP,
@@ -164,7 +187,7 @@ class Brito(Personagem):
         teclas = {
             "pegar": pygame.K_z,
             "largar": pygame.K_x,
-            "cortar": pygame.K_x,
+            "cortar": pygame.K_c,
             "esquerda": pygame.K_a,
             "direita": pygame.K_d,
             "cima": pygame.K_w,
