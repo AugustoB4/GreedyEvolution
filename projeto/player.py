@@ -176,11 +176,12 @@ class Personagem:
                 self.objeto = ingrediente
 
     def cortar(self, ingrediente, tabuas):
+        area = self.area_interacao()
         for tabua in tabuas:
-
-            if (ingrediente.corte and ingrediente.rect.colliderect(tabua.rect)):
-                if ingrediente.cortado == False:
-                    ingrediente.cortar_ingrediente()
+            if area.colliderect(ingrediente.rect):
+                if (ingrediente.corte and ingrediente.rect.colliderect(tabua.rect)):
+                    if ingrediente.cortado == False:
+                        ingrediente.cortar_ingrediente()
 
     def largar(self):
         if not self.objeto:
@@ -214,8 +215,11 @@ class Personagem:
             elif evento.key == self.teclas["largar"]:
                 self.largar()
 
-            elif evento.key == self.teclas["cortar"]:
-                pass
+    def verificar_cortagem(self, evento, ingrediente, tabuas):
+        if evento.type == pygame.KEYDOWN:
+            if evento.key == self.teclas["cortar"]:
+                self.cortar(ingrediente, tabuas)
+    
 class Romerio(Personagem):
     def __init__(self, x, y):
         teclas = {

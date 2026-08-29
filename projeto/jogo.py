@@ -23,8 +23,8 @@ class Jogo:
 
         som_inicial.play()
 
-        self.mapa = Mapa()
-        self.mapa.criar_colisoes()
+        self.mapa1 = Mapa()
+        self.mapa1.criar_colisoes()
 
         self.background = pygame.image.load(
             os.path.join(
@@ -54,18 +54,25 @@ class Jogo:
 
             self.player1.verificar_habilidades(evento, self.tomate)
             self.player2.verificar_habilidades(evento, self.tomate)
+
             self.player1.verificar_habilidades(evento, self.queijo)
             self.player2.verificar_habilidades(evento, self.queijo)
 
-        self.player1.mover(self.mapa.colisoes)
-        self.player2.mover(self.mapa.colisoes)
+            self.player1.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas)
+            self.player2.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas)
+
+            self.player1.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas)
+            self.player2.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas)
+
+        self.player1.mover(self.mapa1.colisoes)
+        self.player2.mover(self.mapa1.colisoes)
 
         self.tomate.atualizar()
         self.queijo.atualizar()
 
     def desenhar(self):
         self.tela.fill(PRETO)
-        self.mapa.desenhar(self.tela)
+        self.mapa1.desenhar(self.tela)
 
         self.player1.desenhar(self.tela)
         self.player2.desenhar(self.tela)
