@@ -8,6 +8,7 @@ from mapa import Mapa
 
 from sons import som_inicial
 from caminhos import BACKGROUND_DIR
+
 class Jogo:
     def __init__(self):
         pygame.init()
@@ -88,6 +89,8 @@ class Jogo:
         menu = Menu(self.tela, self.largura, self.altura)
         if not menu.executar():
             self.rodando = False
+        else:
+            som_inicial.stop()
 
         while self.rodando == True:
             self.verificarEventos()
