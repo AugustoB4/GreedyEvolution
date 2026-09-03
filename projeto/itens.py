@@ -42,6 +42,7 @@ class Tomate(Ingrediente):
 class Queijo(Ingrediente):
     def __init__(self, x, y):
         super().__init__(x, y, os.path.join(INGREDIENTS_DIR, "Cheese.png"), "Cheese")
+        
 class Pao(Ingrediente):
     def __init__(self, x, y):
         super().__init__(x, y, os.path.join(INGREDIENTS_DIR, "Bread.png"), "Bread")

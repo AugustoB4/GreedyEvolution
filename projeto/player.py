@@ -236,9 +236,9 @@ class Romerio(Personagem):
 class Brito(Personagem):
     def __init__(self, x, y):
         teclas = {
-            "pegar": pygame.K_z,
-            "largar": pygame.K_x,
-            "cortar": pygame.K_c,
+            "pegar": pygame.K_q,
+            "largar": pygame.K_1,
+            "cortar": pygame.K_2,
             "esquerda": pygame.K_a,
             "direita": pygame.K_d,
             "cima": pygame.K_w,
