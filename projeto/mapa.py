@@ -3,6 +3,7 @@ import pygame
 
 from constantes import TILE_SIZE
 from caminhos import TILES_DIR
+from itens import Tomate
 
 
 MAPA = [
@@ -28,9 +29,20 @@ class Tabua:
         self.posY = y
 
         self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+
+class Armario:
+    def __init__(self, x, y):
+        self.posX = x
+        self.posY = y
+        self.ingrediente = None
+
+        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+
 class Mapa:
     def __init__(self):
         self.tabuas = []
+        self.armarios = []
+        self.colisoes = []
         self.tiles = {
 
             'F': pygame.image.load(os.path.join(TILES_DIR, "Floor.png")).convert_alpha(),
@@ -54,9 +66,13 @@ class Mapa:
 
                 tela.blit(sprite,(coluna * TILE_SIZE, linha * TILE_SIZE))
 
-    colisoes = []
+        # os tomates dentro do armário ficam ocultos até o clique de pegar
+
     def criar_colisoes(self):
         self.colisoes.clear()
+        self.tabuas.clear()
+        self.armarios.clear()
+
         for linha, texto in enumerate(MAPA):
             for coluna, letra in enumerate(texto):
                 if letra in ("1", "2", "3", "B", "C", "W", "S"):
@@ -72,8 +88,14 @@ class Mapa:
                 if letra == "B":
                     x = coluna * TILE_SIZE
                     y = linha * TILE_SIZE
-
                     self.tabuas.append(Tabua(x, y))
+
+                if letra == "3":
+                    x = coluna * TILE_SIZE
+                    y = linha * TILE_SIZE
+                    armario = Armario(x, y)
+                    armario.ingrediente = Tomate(x, y)
+                    self.armarios.append(armario)
 
     def pode_largar(self, x, y):
         coluna = x // TILE_SIZE
