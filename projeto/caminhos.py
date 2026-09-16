@@ -3,6 +3,9 @@ import os
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
 )
+BASE_FS = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
 SPRITES_DIR = os.path.join(
     BASE_DIR, "assets", "sprites"
@@ -30,4 +33,7 @@ UI_DIR = os.path.join(
 
 SOUNDS_DIR = os.path.join(
     BASE_DIR, "assets", "sounds"
+)
+SOUNDS_FS = os.path.join(
+    BASE_FS, "assets", "sounds"
 )
