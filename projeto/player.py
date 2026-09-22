@@ -1,24 +1,26 @@
 import os
 import pygame
 
-from mapa import MAPA
+from mapa import *
+from jogo import *
 from itens import Tomate
-from constantes import TILE_SIZE, VELOCIDADE
+from constantes import *
 from caminhos import PLAYER_DIR
 
 
 # Classe base
 
+tomates = []
+queijos = []
 class Personagem:
 
-    def __init__(self, x, y, sprite_path, teclas, jogo=None):
+    def __init__(self, x, y, sprite_path, teclas):
 
         self.pos_x = x
         self.pos_y = y
         self.teclas = teclas
         self.velocidade = VELOCIDADE
         self.objeto = None
-        self.jogo = jogo
 
         self.sprite_sheet = pygame.image.load(sprite_path).convert_alpha()
 
@@ -121,10 +123,6 @@ class Personagem:
             (self.pos_x, self.pos_y)
         )
 
-        if self.objeto is not None:
-            self.objeto.atualizar()
-            tela.blit(self.objeto.sprite, (self.objeto.x, self.objeto.y))
-
         pygame.draw.rect(
             tela,
             (255, 0, 0),
@@ -168,64 +166,76 @@ class Personagem:
 
         return area
 
-    def _aponta_para(self, alvo_rect):
-        if self.direcao == "frente":
-            return self.rect.bottom <= alvo_rect.top + 20 and self.rect.centery <= alvo_rect.centery
-
-        if self.direcao == "costas":
-            return self.rect.top >= alvo_rect.bottom - 20 and self.rect.centery >= alvo_rect.centery
-
-        if self.direcao == "lado":
-            if self.virado_esquerda:
-                return self.rect.left >= alvo_rect.right - 20 and self.rect.centerx >= alvo_rect.centerx
-            return self.rect.right <= alvo_rect.left + 20 and self.rect.centerx <= alvo_rect.centerx
-
-        return False
-
-    def pegar(self, ingrediente, armarios):
+    def pegar(self, ingrediente, armarios, armarios_queijo, tomates, queijos):
         area = self.area_interacao()
 
         if self.objeto:
             return
 
-        itens_para_tentar = [ingrediente]
-        if self.jogo is not None:
-            itens_para_tentar.extend(
-                item for item in self.jogo.itens_no_mapa
-                if item is not ingrediente and item.dono is None
-            )
-
-        for item in itens_para_tentar:
+        for item in list(tomates):
             if item is None:
                 continue
-
-            if area.colliderect(item.rect):
+            if item.dono is None and area.colliderect(item.rect):
                 item.dono = self
                 self.objeto = item
-                if self.jogo is not None and item in self.jogo.itens_no_mapa:
-                    self.jogo.itens_no_mapa.remove(item)
+                return
+        for item in list(queijos):
+            if item is None:
+                continue
+            if item.dono is None and area.colliderect(item.rect):
+                item.dono = self
+                self.objeto = item
                 return
 
+        if ingrediente is not None and ingrediente.dono is None and area.colliderect(ingrediente.rect):
+            ingrediente.dono = self
+            self.objeto = ingrediente
+            return
+
         for armario in armarios:
-            if area.colliderect(armario.rect) and self._aponta_para(armario.rect):
-                if armario.ingrediente is not None and armario.ingrediente.dono is None:
-                    armario.ingrediente.dono = self
-                    self.objeto = armario.ingrediente
-                    armario.ingrediente = None
-                    return
+            if area.colliderect(armario.rect):
+                tomate_do_armario = Tomate(armario.posX, armario.posY)
+                tomate_do_armario.dono = self
+                self.objeto = tomate_do_armario
+                tomates.append(tomate_do_armario)
+                return
+
+        for armario_queijo in armarios_queijo:
+            if area.colliderect(armario_queijo.rect):
+                queijo_do_armario = Queijo(armario_queijo.posX, armario_queijo.posY)
+                queijo_do_armario.dono = self
+                self.objeto = queijo_do_armario
+                queijos.append(queijo_do_armario)
+                return
 
 
-    def cortar(self, ingrediente, tabuas):
-        alvo = self.objeto if self.objeto is not None else ingrediente
-        if alvo is None:
+    def cortar(self, ingrediente, tabuas, tomates=None, queijos=None):
+        if not ingrediente:
+            return
+
+        if self.objeto and ingrediente is not self.objeto:
+            ingrediente = self.objeto
+
+        if ingrediente.cortado:
             return
 
         area = self.area_interacao()
+
         for tabua in tabuas:
-            if area.colliderect(alvo.rect) and alvo.rect.colliderect(tabua.rect):
-                if alvo.corte and not alvo.cortado:
-                    alvo.cortar_ingrediente()
-                    return
+            if not area.colliderect(tabua.rect):
+                continue
+
+            alvo = ingrediente
+
+            if tomates:
+                for item in tomates:
+                    if item and not item.cortado and item.rect.colliderect(tabua.rect):
+                        alvo = item
+                        break
+
+            if alvo and alvo.corte and not alvo.cortado and alvo.rect.colliderect(tabua.rect):
+                alvo.cortar_ingrediente()
+                return
 
     def largar(self):
         if not self.objeto:
@@ -242,9 +252,6 @@ class Personagem:
         if coluna < 0 or coluna >= len(MAPA[linha]):
             return
 
-        if MAPA[linha][coluna] not in ("F", "B", "1", "2", "3"):
-            return
-
         centro_x = (coluna * TILE_SIZE + TILE_SIZE // 2)
         centro_y = (linha * TILE_SIZE + TILE_SIZE // 2)
 
@@ -252,28 +259,26 @@ class Personagem:
         self.objeto.x = (centro_x - self.objeto.rect.width // 2)
         self.objeto.y = (centro_y - self.objeto.rect.height // 2)
         self.objeto.rect.topleft = (self.objeto.x, self.objeto.y)
-
-        if self.jogo is not None and self.objeto not in self.jogo.itens_no_mapa:
-            self.jogo.itens_no_mapa.append(self.objeto)
-
         self.objeto = None
 
-    def verificar_habilidades(self, evento, ingrediente, armarios):
+    def verificar_habilidades(self, evento, ingrediente, armarios, armarios_queijo, tomates, queijos):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
-                self.pegar(ingrediente, armarios)
+                self.pegar(ingrediente, armarios, armarios_queijo, tomates, queijos)
 
             elif evento.key == self.teclas["largar"]:
                 self.largar()
+            
 
-    def verificar_cortagem(self, evento, ingrediente, tabuas):
+    def verificar_cortagem(self, evento, ingrediente, tabuas, tomates=None, queijos=None):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["cortar"]:
-                alvo = self.objeto if self.objeto is not None else ingrediente
-                self.cortar(alvo, tabuas)
+                alvo = self.objeto if self.objeto else ingrediente
+                self.cortar(alvo, tabuas, tomates, queijos)
+
     
 class Romerio(Personagem):
-    def __init__(self, x, y, jogo=None):
+    def __init__(self, x, y):
         teclas = {
             "pegar": pygame.K_RSHIFT,
             "largar": pygame.K_RCTRL,
@@ -283,10 +288,10 @@ class Romerio(Personagem):
             "cima": pygame.K_UP,
             "baixo": pygame.K_DOWN
         }
-        super().__init__(x, y, os.path.join(PLAYER_DIR,"Romerio.png"),teclas,jogo)
+        super().__init__(x, y, os.path.join(PLAYER_DIR,"Romerio.png"),teclas)
 
 class Brito(Personagem):
-    def __init__(self, x, y, jogo=None):
+    def __init__(self, x, y):
         teclas = {
             "pegar": pygame.K_q,
             "largar": pygame.K_1,
@@ -297,7 +302,7 @@ class Brito(Personagem):
             "baixo": pygame.K_s
         }
 
-        super().__init__(x, y, os.path.join(PLAYER_DIR, "Brito.png"),teclas,jogo)
+        super().__init__(x, y, os.path.join(PLAYER_DIR, "Brito.png"),teclas)
 
     def desenhar(self, tela):
         return super().desenhar(tela)

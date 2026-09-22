@@ -3,7 +3,7 @@ import pygame
 
 from constantes import TILE_SIZE
 from caminhos import TILES_DIR
-from itens import Tomate
+from itens import Tomate, Queijo
 
 
 MAPA = [
@@ -53,10 +53,19 @@ class Armario:
 
         self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
 
+class ArmarioQueijo:
+    def __init__(self, x, y):
+        self.posX = x
+        self.posY = y
+        self.ingrediente = None
+
+        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+
 class Mapa:
     def __init__(self):
         self.tabuas = []
         self.armarios = []
+        self.armarios_queijo = []
         self.colisoes = []
         self.tiles = {
 
@@ -91,7 +100,7 @@ class Mapa:
         self.colisoes.clear()
         self.tabuas.clear()
         self.armarios.clear()
-
+        self.armarios_queijo.clear()
         for linha, texto in enumerate(MAPA):
             for coluna, letra in enumerate(texto):
                 if letra in ("1", "2", "3", "4", "B", "C", "W", "S", "M", "O", "N"): # Adiciona colisão ao tile
@@ -115,6 +124,13 @@ class Mapa:
                     armario = Armario(x, y)
                     armario.ingrediente = Tomate(x, y)
                     self.armarios.append(armario)
+
+                if letra == "4":
+                    x = coluna * TILE_SIZE
+                    y = linha * TILE_SIZE
+                    armario_queijo = ArmarioQueijo(x, y)
+                    armario_queijo.ingrediente = Queijo(x, y)
+                    self.armarios_queijo.append(armario_queijo)
 
     def pode_largar(self, x, y):
         coluna = x // TILE_SIZE

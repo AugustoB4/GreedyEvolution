@@ -2,11 +2,11 @@ import pygame
 
 from constantes import *
 from menu import Menu
-from player import Romerio, Brito
+from player import Romerio, Brito, tomates, queijos
 from itens import *
-from mapa import Mapa, Armario
+from mapa import Mapa
 
-from sons import som_inicial, som_face
+from sons import som_inicial
 from caminhos import BACKGROUND_DIR
 
 class Jogo:
@@ -26,6 +26,8 @@ class Jogo:
 
         self.mapa1 = Mapa()
         self.mapa1.criar_colisoes()
+        self.armarios = self.mapa1.armarios
+        self.armarios_queijo = self.mapa1.armarios_queijo
 
         self.background = pygame.image.load(
             os.path.join(
@@ -38,15 +40,16 @@ class Jogo:
             self.background,
             (self.largura, self.altura)
         )
+        self.tomates = tomates
+        self.queijos = queijos
 
-        self.tomates = []
         self.tomate = Tomate(500, 300)
         self.tomates.append(self.tomate)
         self.queijo = Queijo(450, 300)
-        self.itens_no_mapa = [self.tomate, self.queijo]
+        self.queijos.append(self.queijo)
 
-        self.player1 = Romerio(750, 200, self)
-        self.player2 = Brito(250, 200, self)
+        self.player1 = Romerio(750, 200)
+        self.player2 = Brito(250, 200)
 
         self.rodando = True
         self.clock = pygame.time.Clock()
@@ -56,27 +59,25 @@ class Jogo:
             if evento.type == pygame.QUIT:
                 self.rodando = False
 
-            self.player1.verificar_habilidades(evento, self.tomate, self.mapa1.armarios)
-            self.player2.verificar_habilidades(evento, self.tomate, self.mapa1.armarios)
+            self.player1.verificar_habilidades(evento, self.tomate, self.armarios, self.armarios_queijo, self.tomates, self.queijos)
+            self.player2.verificar_habilidades(evento, self.tomate, self.armarios, self.armarios_queijo, self.tomates, self.queijos)
 
-            self.player1.verificar_habilidades(evento, self.queijo, self.mapa1.armarios)
-            self.player2.verificar_habilidades(evento, self.queijo, self.mapa1.armarios)
+            self.player1.verificar_habilidades(evento, self.queijo, self.armarios, self.armarios_queijo, self.tomates, self.queijos)
+            self.player2.verificar_habilidades(evento, self.queijo, self.armarios, self.armarios_queijo, self.tomates, self.queijos)
 
-            self.player1.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas)
-            self.player2.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas)
+            self.player1.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas, self.tomates, self.queijo)
+            self.player2.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas, self.tomates, self.queijo)
 
-            self.player1.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas)
-            self.player2.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas)
+            self.player1.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas, self.tomates, self.queijos)
+            self.player2.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas, self.tomates, self.queijos)
 
         self.player1.mover(self.mapa1.colisoes)
         self.player2.mover(self.mapa1.colisoes)
 
-        for jogador in (self.player1, self.player2):
-            if jogador.objeto:
-                jogador.objeto.atualizar()
-
-        for item in self.itens_no_mapa:
-            item.atualizar()
+        for tomate in self.tomates:
+            tomate.atualizar()
+        for queijo in self.queijos:
+            queijo.atualizar()
 
     def desenhar(self):
         self.tela.fill(PRETO)
@@ -85,8 +86,10 @@ class Jogo:
         self.player1.desenhar(self.tela)
         self.player2.desenhar(self.tela)
 
-        for item in self.itens_no_mapa:
-            item.desenhar(self.tela)
+        for tomate in self.tomates:
+            tomate.desenhar(self.tela)
+        for queijo in self.queijos:
+            queijo.desenhar(self.tela)
 
         pygame.display.flip()
 
@@ -96,11 +99,9 @@ class Jogo:
             self.rodando = False
         else:
             som_inicial.stop()
-            som_face.play(-1)
 
         while self.rodando == True:
             self.verificarEventos()
             self.desenhar()
             self.clock.tick(60)
         pygame.quit()
-
