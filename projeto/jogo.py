@@ -6,7 +6,7 @@ from player import Romerio, Brito, tomates, queijos
 from itens import *
 from mapa import Mapa
 
-from sons import som_inicial
+from sons import som_inicial, som_face
 from caminhos import BACKGROUND_DIR
 
 class Jogo:
@@ -99,7 +99,8 @@ class Jogo:
             self.rodando = False
         else:
             som_inicial.stop()
-
+            som_face.play(-1)
+           
         while self.rodando == True:
             self.verificarEventos()
             self.desenhar()
