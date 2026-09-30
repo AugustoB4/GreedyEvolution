@@ -6,6 +6,9 @@ BASE_DIR = os.path.dirname(
 BASE_FS = os.path.dirname(
     os.path.abspath(__file__)
 )
+BASE_BT = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
 SPRITES_DIR = os.path.join(
     BASE_DIR, "assets", "sprites"
