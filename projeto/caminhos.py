@@ -37,3 +37,7 @@ SOUNDS_DIR = os.path.join(
 SOUNDS_FS = os.path.join(
     BASE_FS, "assets", "sounds"
 )
+SOUNDS_BT = os.path.join(
+    BASE_BT, "assets", "sounds"
+
+)

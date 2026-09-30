@@ -4,6 +4,7 @@ import pygame
 
 from constantes import *
 from caminhos import BACKGROUND_DIR, UI_DIR
+from sons import som_botoes
 
 
 class Menu:
@@ -90,6 +91,12 @@ class Menu:
                         return True
 
                     if self.quitRect.collidepoint(evento.pos):
+                        return False
+                if self.startRect.collidepoint(evento.pos):
+                        som_botoes.play()
+                        return True
+                if self.quitRect.collidepoint(evento.pos):
+                        som_botoes.play()
                         return False
 
             self.desenhar()
