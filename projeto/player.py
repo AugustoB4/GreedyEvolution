@@ -9,11 +9,10 @@ from caminhos import PLAYER_DIR
 
 
 # Classe base
-
 tomates = []
 queijos = []
-class Personagem:
 
+class Personagem:
     def __init__(self, x, y, sprite_path, teclas):
 
         self.pos_x = x

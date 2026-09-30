@@ -71,7 +71,7 @@ class Mapa:
 
             'F': pygame.image.load(os.path.join(TILES_DIR, "Floor.png")).convert_alpha(),
             'W': pygame.image.load(os.path.join(TILES_DIR, "Wall.png")).convert_alpha(),
-            'M': pygame.image.load(os.path.join(TILES_DIR, "DeliveryWindow.png")).convert_alpha(),
+            'M': pygame.image.load(os.path.join(TILES_DIR, "DeliveryWindow2.png")).convert_alpha(),
             'N': pygame.image.load(os.path.join(TILES_DIR, "DeliveryBelt.png")).convert_alpha(),
             '1': pygame.image.load(os.path.join(TILES_DIR, "CounterUp.png")).convert_alpha(),
             '2': pygame.image.load(os.path.join(TILES_DIR, "CounterFront.png")).convert_alpha(),
@@ -91,6 +91,9 @@ class Mapa:
                 sprite = self.tiles[letra]
                 if letra == "Y" and coluna == 19:
                     sprite = pygame.transform.flip(sprite, True, False) # Virar os tiles em qualquer direção
+                    
+                if letra == "M" and coluna == 20:
+                    sprite = pygame.transform.rotate(sprite, -90) # ROtaciona a imagem em graus
 
                 tela.blit(sprite,(coluna * TILE_SIZE, linha * TILE_SIZE))
 

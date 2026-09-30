@@ -34,10 +34,10 @@ class Ingrediente:
 
     def desenhar(self, tela):
         tela.blit(self.sprite, (self.x, self.y))
+
 class Tomate(Ingrediente):
     def __init__(self, x, y):
         super().__init__( x, y, os.path.join(INGREDIENTS_DIR, "Tomato.png"), "Tomato")
-
 
 class Queijo(Ingrediente):
     def __init__(self, x, y):
