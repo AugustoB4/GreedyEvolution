@@ -3,7 +3,7 @@ import pygame
 
 from mapa import *
 from jogo import *
-from itens import Tomate
+from itens import Tomate, Queijo
 from constantes import *
 from caminhos import PLAYER_DIR
 
@@ -227,8 +227,14 @@ class Personagem:
 
             alvo = ingrediente
 
-            if tomates:
+            if isinstance(tomates, (list)):
                 for item in tomates:
+                    if item and not item.cortado and item.rect.colliderect(tabua.rect):
+                        alvo = item
+                        break
+
+            if isinstance(queijos, (list)):
+                for item in queijos:
                     if item and not item.cortado and item.rect.colliderect(tabua.rect):
                         alvo = item
                         break

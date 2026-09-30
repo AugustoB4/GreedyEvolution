@@ -65,8 +65,8 @@ class Jogo:
             self.player1.verificar_habilidades(evento, self.queijo, self.armarios, self.armarios_queijo, self.tomates, self.queijos)
             self.player2.verificar_habilidades(evento, self.queijo, self.armarios, self.armarios_queijo, self.tomates, self.queijos)
 
-            self.player1.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas, self.tomates, self.queijo)
-            self.player2.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas, self.tomates, self.queijo)
+            self.player1.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas, self.tomates, self.queijos)
+            self.player2.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas, self.tomates, self.queijos)
 
             self.player1.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas, self.tomates, self.queijos)
             self.player2.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas, self.tomates, self.queijos)
