@@ -93,6 +93,7 @@ class Menu:
                         return True
                  if self.quitRect.collidepoint(evento.pos):
                         som_botoes.play()
+                        pygame.time.delay(100)
                         return False
 
             self.desenhar()
