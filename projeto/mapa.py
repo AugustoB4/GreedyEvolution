@@ -3,6 +3,7 @@ import pygame
 
 from constantes import TILE_SIZE
 from caminhos import TILES_DIR
+from caminhos import SOUNDS_DIR, SOUNDS_FS, SOUNDS_BT
 from itens import Tomate, Queijo
 
 
