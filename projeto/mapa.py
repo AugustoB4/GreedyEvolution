@@ -37,6 +37,7 @@ MAPA = [
 "T = TreadMill / Esteira de velocidade"
 "N = DeliveryBelt / Esteira de Delivery"
 "M = DeliveryWindow / Janela de Delivery"
+"R = Refrigerator / Geladeira"
 
 
 class Tabua:
@@ -44,6 +45,13 @@ class Tabua:
         self.posX = x
         self.posY = y
 
+        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        
+class Forno:
+    def __init__(self, x, y):
+        self.posX = x
+        self.posY = y
+        
         self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
 
 class Armario:
@@ -55,6 +63,13 @@ class Armario:
         self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
 
 class ArmarioQueijo:
+    def __init__(self, x, y):
+        self.posX = x
+        self.posY = y
+        self.ingrediente = None
+
+        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+class ArmarioTomate:
     def __init__(self, x, y):
         self.posX = x
         self.posY = y
@@ -74,6 +89,7 @@ class Mapa:
     def __init__(self):
         self.tabuas = []
         self.armarios = []
+        self.armarios_tomate = []
         self.armarios_queijo = []
         self.geladeiras = []
         self.colisoes = []
@@ -119,6 +135,7 @@ class Mapa:
         self.colisoes.clear()
         self.tabuas.clear()
         self.armarios.clear()
+        self.armarios_tomate.clear()
         self.armarios_queijo.clear()
         self.geladeiras.clear()
         
@@ -146,6 +163,13 @@ class Mapa:
                     armario = Armario(x, y)
                     armario.ingrediente = Pao(x, y)
                     self.armarios.append(armario)
+
+                if letra == "A":
+                    x = coluna * TILE_SIZE
+                    y = linha * TILE_SIZE
+                    armario_tomate = ArmarioTomate(x, y)
+                    armario_tomate.ingrediente = Tomate(x, y)
+                    self.armarios_tomate.append(armario_tomate)
 
                 if letra == "4":
                     x = coluna * TILE_SIZE

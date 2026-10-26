@@ -18,6 +18,10 @@ BACKGROUND_DIR = os.path.join(
     SPRITES_DIR, "background"
 )
 
+ANIMATION_DIR = os.path.join(
+    SPRITES_DIR, "animations"
+)
+
 INGREDIENTS_DIR = os.path.join(
     SPRITES_DIR, "ingredients"
 )

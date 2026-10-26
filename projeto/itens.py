@@ -2,7 +2,7 @@ import os
 import pygame
 
 from constantes import VERMELHO
-from caminhos import INGREDIENTS_DIR
+from caminhos import INGREDIENTS_DIR, ANIMATION_DIR
 class Ingrediente:
     def __init__(self, x, y, sprite_path, nome):
         self.x = x
@@ -18,6 +18,9 @@ class Ingrediente:
         self.assado = False
         self.queimado = False
         self.cortado = False
+        
+        '''self.spritesheet_barra_assar =  pygame.image.load(ANIMATION_DIR + "CookingBar").convert_alpha()
+        self.spritesheet_forno_assando =  pygame.image.load(ANIMATION_DIR + "UseOven").convert_alpha()'''
 
     def atualizar(self):
         if self.dono:
@@ -33,18 +36,18 @@ class Ingrediente:
             self.sprite = pygame.image.load(caminho).convert_alpha()
             self.sprite = pygame.transform.scale(self.sprite, (32, 32))
             self.cortado = True
-            
+    
     def assar_ingrediente(self, forno):
         self.cont = 0
         self.image = (INGREDIENTS_DIR + "RawMeat.png")
         if self.colliderect(forno.rect):
-            while self.cont <= 15:
+            while self.cont <= 30:
                 self.cont += 1
                 if self.cont == 8:
                     self.image = (INGREDIENTS_DIR + "CookedMeat.png")
                     self.assado = True
                     self.cru = False
-                if self.cont == 15:
+                if self.cont == 40:
                     self.image = (INGREDIENTS_DIR + "BurnedMeat.png")
                     self.assado = False
                     self.queimado = True

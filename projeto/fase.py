@@ -14,4 +14,4 @@ class Fase:
         decrescimo_tempo = int(tempo_pedido/2)
         self.tempo -= decrescimo_tempo
         self.pontuacao -= decrescimo_ponto
-
+    
