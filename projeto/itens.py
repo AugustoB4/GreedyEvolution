@@ -5,7 +5,6 @@ from constantes import VERMELHO
 from caminhos import INGREDIENTS_DIR
 class Ingrediente:
     def __init__(self, x, y, sprite_path, nome):
-
         self.x = x
         self.y = y
         self.nome = nome
@@ -15,6 +14,9 @@ class Ingrediente:
         self.rect = self.sprite.get_rect(topleft=(x, y))
         self.dono = None
         self.corte = True
+        self.cru = True
+        self.assado = False
+        self.queimado = False
         self.cortado = False
 
     def atualizar(self):
@@ -31,7 +33,22 @@ class Ingrediente:
             self.sprite = pygame.image.load(caminho).convert_alpha()
             self.sprite = pygame.transform.scale(self.sprite, (32, 32))
             self.cortado = True
-
+            
+    def assar_ingrediente(self, forno):
+        self.cont = 0
+        self.image = (INGREDIENTS_DIR + "RawMeat.png")
+        if self.colliderect(forno.rect):
+            while self.cont <= 15:
+                self.cont += 1
+                if self.cont == 8:
+                    self.image = (INGREDIENTS_DIR + "CookedMeat.png")
+                    self.assado = True
+                    self.cru = False
+                if self.cont == 15:
+                    self.image = (INGREDIENTS_DIR + "BurnedMeat.png")
+                    self.assado = False
+                    self.queimado = True
+        
     def desenhar(self, tela):
         tela.blit(self.sprite, (self.x, self.y))
 
@@ -46,4 +63,8 @@ class Queijo(Ingrediente):
 class Pao(Ingrediente):
     def __init__(self, x, y):
         super().__init__(x, y, os.path.join(INGREDIENTS_DIR, "Bread.png"), "Bread")
+        
+class Carne(Ingrediente):
+    def __init__(self, x, y):
+        super().__init__(x, y, os.path.join(INGREDIENTS_DIR, "RawMeat.png"), "Meat")
 

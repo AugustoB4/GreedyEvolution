@@ -4,12 +4,12 @@ import pygame
 from constantes import TILE_SIZE
 from caminhos import TILES_DIR
 from caminhos import SOUNDS_DIR, SOUNDS_FS, SOUNDS_BT
-from itens import Tomate, Queijo
+from itens import *
 
 
 MAPA = [
     "WYIIIIIIIIIIIIIIIIIYW",
-    "W1S2B22332122O22B221W",
+    "W1S2B22332122O22B2R1W",
     "W1FFFFFFFF1FFFFFFFF1W",
     "W1FF1111FF2FF1111FFNM",
     "W1FF2332FFTFF4332FF1W",
@@ -61,12 +61,21 @@ class ArmarioQueijo:
         self.ingrediente = None
 
         self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        
+class Geladeira:
+    def __init__(self, x, y):
+        self.posX = x
+        self.posY = y
+        self.ingrediente = None
+
+        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
 
 class Mapa:
     def __init__(self):
         self.tabuas = []
         self.armarios = []
         self.armarios_queijo = []
+        self.geladeiras = []
         self.colisoes = []
         self.tiles = {
 
@@ -84,6 +93,7 @@ class Mapa:
             'I': pygame.image.load(os.path.join(TILES_DIR, "MiddleWindow.png")).convert_alpha(),
             'T': pygame.image.load(os.path.join(TILES_DIR, "TreadMill.png")).convert_alpha(),
             'O': pygame.image.load(os.path.join(TILES_DIR, "Oven.png")).convert_alpha(),
+            'R': pygame.image.load(os.path.join(TILES_DIR, "Refrigerator.png")).convert_alpha()
         }
 
     def desenhar(self, tela):
@@ -95,6 +105,11 @@ class Mapa:
                     
                 if letra == "M" and coluna == 20:
                     sprite = pygame.transform.rotate(sprite, -90) # ROtaciona a imagem em graus
+                    
+                if letra == "R":
+                    sprite = pygame.transform.scale(self.tiles["R"], (TILE_SIZE, TILE_SIZE * 2))
+                    tela.blit(sprite,(coluna * TILE_SIZE, linha * TILE_SIZE - TILE_SIZE))
+                    continue
 
                 tela.blit(sprite,(coluna * TILE_SIZE, linha * TILE_SIZE))
 
@@ -105,9 +120,12 @@ class Mapa:
         self.tabuas.clear()
         self.armarios.clear()
         self.armarios_queijo.clear()
+        self.geladeiras.clear()
+        
+        
         for linha, texto in enumerate(MAPA):
             for coluna, letra in enumerate(texto):
-                if letra in ("1", "2", "3", "4", "B", "C", "W", "S", "M", "O", "N"): # Adiciona colisão ao tile
+                if letra in ("1", "2", "3", "4", "B", "C", "W", "S", "M", "O", "N", "R"): # Adiciona colisão ao tile
                     self.colisoes.append(
                         pygame.Rect(
                             coluna * TILE_SIZE,
@@ -126,7 +144,7 @@ class Mapa:
                     x = coluna * TILE_SIZE
                     y = linha * TILE_SIZE
                     armario = Armario(x, y)
-                    armario.ingrediente = Tomate(x, y)
+                    armario.ingrediente = Pao(x, y)
                     self.armarios.append(armario)
 
                 if letra == "4":
@@ -135,6 +153,13 @@ class Mapa:
                     armario_queijo = ArmarioQueijo(x, y)
                     armario_queijo.ingrediente = Queijo(x, y)
                     self.armarios_queijo.append(armario_queijo)
+                    
+                if letra == "R":
+                    x = coluna * TILE_SIZE
+                    y = linha * TILE_SIZE
+                    geladeira = Geladeira(x, y)
+                    geladeira.ingrediente = Carne(x, y)
+                    self.geladeiras.append(geladeira)
 
     def pode_largar(self, x, y):
         coluna = x // TILE_SIZE

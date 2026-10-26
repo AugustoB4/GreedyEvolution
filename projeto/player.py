@@ -11,6 +11,9 @@ from caminhos import PLAYER_DIR
 # Classe base
 tomates = []
 queijos = []
+paos = []
+carnes  = []
+alface = []
 
 class Personagem:
     def __init__(self, x, y, sprite_path, teclas):
@@ -266,10 +269,10 @@ class Personagem:
         self.objeto.rect.topleft = (self.objeto.x, self.objeto.y)
         self.objeto = None
 
-    def verificar_habilidades(self, evento, ingrediente, armarios, armarios_queijo, tomates, queijos):
+    def verificar_habilidades(self, evento, ingrediente, armarios, armarios_queijo, paos, queijos):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
-                self.pegar(ingrediente, armarios, armarios_queijo, tomates, queijos)
+                self.pegar(ingrediente, armarios, armarios_queijo, paos, queijos)
 
             elif evento.key == self.teclas["largar"]:
                 self.largar()
