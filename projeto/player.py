@@ -2,8 +2,7 @@ import os
 import pygame
 
 from mapa import *
-from jogo import *
-from itens import Tomate, Queijo, Pao
+from itens import *
 from constantes import *
 from caminhos import PLAYER_DIR
 
@@ -168,13 +167,22 @@ class Personagem:
 
         return area
 
-    def pegar(self, ingrediente, armarios, armarios_queijo, armarios_tomate, tomates, queijos, paos, carnes):
+    def pegar(self, armarios, armarios_queijo, armarios_tomate, armarios_alface,
+              geladeiras, tomates, alfaces, queijos, paos, carnes):
         area = self.area_interacao()
 
         if self.objeto:
             return
 
         for item in list(tomates):
+            if item is None:
+                continue
+            if item.dono is None and area.colliderect(item.rect):
+                item.dono = self
+                self.objeto = item
+                return
+            
+        for item in list(alfaces):
             if item is None:
                 continue
             if item.dono is None and area.colliderect(item.rect):
@@ -206,11 +214,6 @@ class Personagem:
                 self.objeto = item
                 return
 
-        if ingrediente is not None and ingrediente.dono is None and area.colliderect(ingrediente.rect):
-            ingrediente.dono = self
-            self.objeto = ingrediente
-            return
-
         for armario_tomate in armarios_tomate:
             if area.colliderect(armario_tomate.rect):
                 tomate_do_armario = Tomate(armario_tomate.posX, armario_tomate.posY)
@@ -218,12 +221,20 @@ class Personagem:
                 self.objeto = tomate_do_armario
                 tomates.append(tomate_do_armario)
                 return
+            
+        for armario_alface in armarios_alface:
+            if area.colliderect(armario_alface.rect):
+                alface_do_armario = Alface(armario_alface.posX, armario_alface.posY)
+                alface_do_armario.dono = self
+                self.objeto = alface_do_armario
+                alfaces.append(alface_do_armario)
+                return
 
         for armario_queijo in armarios_queijo:
             if area.colliderect(armario_queijo.rect):
                 queijo_do_armario = Queijo(armario_queijo.posX, armario_queijo.posY)
                 queijo_do_armario.dono = self
-                self.objeto = queijo_do_armario
+                self.objeto = queijo_do_armario 
                 queijos.append(queijo_do_armario)
                 return
             
@@ -235,44 +246,55 @@ class Personagem:
                 paos.append(pao_do_armario)
                 return
 
-    def cortar(self, ingrediente, tabuas, tomates=None, queijos=None, paos=None):
-        if not ingrediente:
-            return
+        for geladeira in geladeiras:
+            if area.colliderect(geladeira.rect):
+                carne_da_geladeira = Carne(geladeira.posX, geladeira.posY)
+                carne_da_geladeira.dono = self
+                self.objeto = carne_da_geladeira
+                carnes.append(carne_da_geladeira)
+                return
 
-        if self.objeto and ingrediente is not self.objeto:
-            ingrediente = self.objeto
-
-        if ingrediente.cortado:
-            return
-
+    def cortar(self, tabuas, tomates, alfaces, queijos, paos, carnes):
         area = self.area_interacao()
 
         for tabua in tabuas:
             if not area.colliderect(tabua.rect):
                 continue
 
-            alvo = ingrediente
-
-            if isinstance(tomates, (list)):
-                for item in tomates:
-                    if item and not item.cortado and item.rect.colliderect(tabua.rect):
-                        alvo = item
-                        break
-
-            if isinstance(queijos, (list)):
-                for item in queijos:
-                    if item and not item.cortado and item.rect.colliderect(tabua.rect):
-                        alvo = item
-                        break
-            if isinstance(paos, (list)):
-                for item in paos:
-                    if item and not item.cortado and item.rect.colliderect(tabua.rect):
-                        alvo = item
-                        break
-
-            if alvo and alvo.corte and not alvo.cortado and alvo.rect.colliderect(tabua.rect):
-                alvo.cortar_ingrediente()
+            if self.objeto:
+                if self.objeto.corte and not self.objeto.cortado:
+                    self.objeto.cortar_ingrediente()
                 return
+
+            for item in tomates:
+                if item and item.dono is None and item.corte and not item.cortado:
+                    if item.rect.colliderect(tabua.rect):
+                        item.cortar_ingrediente()
+                        return
+
+            for item in alfaces:
+                if item and item.dono is None and item.corte and not item.cortado:
+                    if item.rect.colliderect(tabua.rect):
+                        item.cortar_ingrediente()
+                        return
+
+            for item in queijos:
+                if item and item.dono is None and item.corte and not item.cortado:
+                    if item.rect.colliderect(tabua.rect):
+                        item.cortar_ingrediente()
+                        return
+
+            for item in paos:
+                if item and item.dono is None and item.corte and not item.cortado:
+                    if item.rect.colliderect(tabua.rect):
+                        item.cortar_ingrediente()
+                        return
+
+            for item in carnes:
+                if item and item.dono is None and item.corte and not item.cortado:
+                    if item.rect.colliderect(tabua.rect):
+                        item.cortar_ingrediente()
+                        return
 
     def largar(self):
         if not self.objeto:
@@ -298,22 +320,22 @@ class Personagem:
         self.objeto.rect.topleft = (self.objeto.x, self.objeto.y)
         self.objeto = None
 
-    def verificar_habilidades(self, evento, ingrediente, armarios, armarios_queijo, armarios_tomate, tomates, queijos, paos, carnes):
+    def verificar_habilidades(self, evento, armarios, armarios_queijo, armarios_tomate,
+                              armarios_alface, geladeiras, tomates, alfaces, queijos,
+                              paos, carnes):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
-                self.pegar(ingrediente, armarios, armarios_queijo, armarios_tomate, tomates, queijos, paos, carnes)
+                self.pegar(armarios, armarios_queijo, armarios_tomate, armarios_alface,
+                           geladeiras, tomates, alfaces, queijos, paos, carnes)
 
             elif evento.key == self.teclas["largar"]:
                 self.largar()
-            
 
-    def verificar_cortagem(self, evento, ingrediente, tabuas, tomates=None, queijos=None, paos=None):
+    def verificar_cortagem(self, evento, tabuas, tomates, alfaces, queijos, paos,
+                           carnes):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["cortar"]:
-                alvo = self.objeto if self.objeto else ingrediente
-                self.cortar(alvo, tabuas, tomates, queijos, paos)
-
-    
+                self.cortar(tabuas, tomates, alfaces, queijos, paos, carnes)
 class Romerio(Personagem):
     def __init__(self, x, y):
         teclas = {

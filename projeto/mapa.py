@@ -12,12 +12,12 @@ MAPA = [
     "W1S2B22332122O22B2R1W",
     "W1FFFFFFFF1FFFFFFFF1W",
     "W1FF1111FF2FF1111FFNM",
-    "W1FF2332FFTFF4332FF1W",
-    "W1FFFFFFFFTFFFFFFFF1W",
-    "W1FFFFFFFF2FFFFFFFF1W",
-    "W1FF1111FFTFF1111FF1W",
-    "W1FF2332FFTFF2332FF1W",
+    "W1FF2332FFFFF2LT2FF1W",
+    "W1FFFFFFFFFFFFFFFFF1W",
     "W1FFFFFFFF1FFFFFFFF1W",
+    "W1FF1111FF2FF1111FF1W",
+    "W1FF2LT2FFFFF4332FF1W",
+    "W1FFFFFFFFFFFFFFFFF1W",
     "W1FFFFFFFF1FFFFFFFF1W",
     "W1111111111111111111W",
     "WWWWWWWWWWWWWWWWWWWWW",
@@ -77,6 +77,14 @@ class ArmarioTomate:
 
         self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
         
+class ArmarioAlface:
+    def __init__(self, x, y):
+        self.posX = x
+        self.posY = y
+        self.ingrediente = None
+
+        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        
 class Geladeira:
     def __init__(self, x, y):
         self.posX = x
@@ -88,8 +96,10 @@ class Geladeira:
 class Mapa:
     def __init__(self):
         self.tabuas = []
+        self.fornos = []
         self.armarios = []
         self.armarios_tomate = []
+        self.armarios_alface = []
         self.armarios_queijo = []
         self.geladeiras = []
         self.colisoes = []
@@ -107,9 +117,11 @@ class Mapa:
             'B': pygame.image.load(os.path.join(TILES_DIR, "CuttingBoard.png")).convert_alpha(),
             'Y': pygame.image.load(os.path.join(TILES_DIR, "RightWindow.png")).convert_alpha(),
             'I': pygame.image.load(os.path.join(TILES_DIR, "MiddleWindow.png")).convert_alpha(),
-            'T': pygame.image.load(os.path.join(TILES_DIR, "TreadMill.png")).convert_alpha(),
+            '@': pygame.image.load(os.path.join(TILES_DIR, "TreadMill.png")).convert_alpha(),
             'O': pygame.image.load(os.path.join(TILES_DIR, "Oven.png")).convert_alpha(),
-            'R': pygame.image.load(os.path.join(TILES_DIR, "Refrigerator.png")).convert_alpha()
+            'R': pygame.image.load(os.path.join(TILES_DIR, "Refrigerator.png")).convert_alpha(),
+            'L': pygame.image.load(os.path.join(TILES_DIR, "LettuceDispenser.png")).convert_alpha(),
+            'T': pygame.image.load(os.path.join(TILES_DIR, "TomatoDispenser.png")).convert_alpha()
         }
 
     def desenhar(self, tela):
@@ -134,15 +146,17 @@ class Mapa:
     def criar_colisoes(self):
         self.colisoes.clear()
         self.tabuas.clear()
+        self.fornos.clear()
         self.armarios.clear()
         self.armarios_tomate.clear()
+        self.armarios_alface.clear()
         self.armarios_queijo.clear()
         self.geladeiras.clear()
         
         
         for linha, texto in enumerate(MAPA):
             for coluna, letra in enumerate(texto):
-                if letra in ("1", "2", "3", "4", "B", "C", "W", "S", "M", "O", "N", "R"): # Adiciona colisão ao tile
+                if letra in ("1", "2", "3", "4", "B", "C", "W", "S", "M", "O", "N", "R", "L", "T"): # Adiciona colisão ao tile
                     self.colisoes.append(
                         pygame.Rect(
                             coluna * TILE_SIZE,
@@ -157,6 +171,11 @@ class Mapa:
                     y = linha * TILE_SIZE
                     self.tabuas.append(Tabua(x, y))
 
+                if letra == "O":
+                    x = coluna * TILE_SIZE
+                    y = linha * TILE_SIZE
+                    self.fornos.append(Forno(x, y))
+
                 if letra == "3":
                     x = coluna * TILE_SIZE
                     y = linha * TILE_SIZE
@@ -164,12 +183,19 @@ class Mapa:
                     armario.ingrediente = Pao(x, y)
                     self.armarios.append(armario)
 
-                if letra == "A":
+                if letra == "T":
                     x = coluna * TILE_SIZE
                     y = linha * TILE_SIZE
                     armario_tomate = ArmarioTomate(x, y)
                     armario_tomate.ingrediente = Tomate(x, y)
                     self.armarios_tomate.append(armario_tomate)
+                
+                if letra == "L":
+                    x = coluna * TILE_SIZE
+                    y = linha * TILE_SIZE
+                    armario_alface = ArmarioAlface(x, y)
+                    armario_alface.ingrediente = Alface(x, y)
+                    self.armarios_alface.append(armario_alface)
 
                 if letra == "4":
                     x = coluna * TILE_SIZE
@@ -195,5 +221,5 @@ class Mapa:
         if coluna < 0 or coluna >= len(MAPA[linha]):
             return False
 
-        return MAPA[linha][coluna] in ("F", "B","1", "2", "3")
+        return MAPA[linha][coluna] in ("F", "B")
 

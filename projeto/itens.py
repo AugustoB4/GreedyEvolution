@@ -18,6 +18,7 @@ class Ingrediente:
         self.assado = False
         self.queimado = False
         self.cortado = False
+        self.cont = 0
         
         '''self.spritesheet_barra_assar =  pygame.image.load(ANIMATION_DIR + "CookingBar").convert_alpha()
         self.spritesheet_forno_assando =  pygame.image.load(ANIMATION_DIR + "UseOven").convert_alpha()'''
@@ -33,24 +34,35 @@ class Ingrediente:
         if self.corte and not self.cortado:
             caminho = os.path.join(INGREDIENTS_DIR, "Sliced" + self.nome + ".png")
 
-            self.sprite = pygame.image.load(caminho).convert_alpha()
-            self.sprite = pygame.transform.scale(self.sprite, (32, 32))
+            if os.path.exists(caminho):
+                self.sprite = pygame.image.load(caminho).convert_alpha()
+                self.sprite = pygame.transform.scale(self.sprite, (32, 32))
+
             self.cortado = True
     
-    def assar_ingrediente(self, forno):
-        self.cont = 0
-        self.image = (INGREDIENTS_DIR + "RawMeat.png")
-        if self.colliderect(forno.rect):
-            while self.cont <= 30:
+    def assar_ingrediente(self, fornos):
+        if self.nome != "Meat" or self.queimado:
+            return
+
+        for forno in fornos:
+            if self.rect.colliderect(forno.rect):
                 self.cont += 1
+
                 if self.cont == 8:
-                    self.image = (INGREDIENTS_DIR + "CookedMeat.png")
+                    caminho = os.path.join(INGREDIENTS_DIR, "CookedMeat.png")
+                    self.sprite = pygame.image.load(caminho).convert_alpha()
+                    self.sprite = pygame.transform.scale(self.sprite, (32, 32))
                     self.assado = True
                     self.cru = False
-                if self.cont == 40:
-                    self.image = (INGREDIENTS_DIR + "BurnedMeat.png")
+
+                elif self.cont >= 40:
+                    caminho = os.path.join(INGREDIENTS_DIR, "BurnedMeat.png")
+                    self.sprite = pygame.image.load(caminho).convert_alpha()
+                    self.sprite = pygame.transform.scale(self.sprite, (32, 32))
                     self.assado = False
                     self.queimado = True
+
+                return
         
     def desenhar(self, tela):
         tela.blit(self.sprite, (self.x, self.y))
@@ -58,6 +70,10 @@ class Ingrediente:
 class Tomate(Ingrediente):
     def __init__(self, x, y):
         super().__init__( x, y, os.path.join(INGREDIENTS_DIR, "Tomato.png"), "Tomato")
+        
+class Alface(Ingrediente):
+    def __init__(self, x, y):
+        super().__init__( x, y, os.path.join(INGREDIENTS_DIR, "Lettuce.png"), "Lettuce")
 
 class Queijo(Ingrediente):
     def __init__(self, x, y):

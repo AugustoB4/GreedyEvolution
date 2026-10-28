@@ -2,7 +2,7 @@ import pygame
 
 from constantes import *
 from menu import Menu
-from player import Romerio, Brito, tomates, queijos, paos, carnes
+from player import Romerio, Brito, tomates, queijos, paos, carnes, alfaces
 from itens import *
 from mapa import Mapa
 
@@ -29,6 +29,7 @@ class Jogo:
         self.armarios = self.mapa1.armarios
         self.armarios_queijo = self.mapa1.armarios_queijo
         self.armarios_tomate = self.mapa1.armarios_tomate
+        self.armarios_alface = self.mapa1.armarios_alface
         self.geladeiras = self.mapa1.geladeiras
 
         self.background = pygame.image.load(
@@ -46,15 +47,8 @@ class Jogo:
         self.queijos = queijos
         self.paos = paos
         self.carnes = carnes
+        self.alfaces = alfaces
 
-        self.tomate = Tomate(500, 300)
-        self.tomates.append(self.tomate)
-        self.queijo = Queijo(450, 300)
-        self.queijos.append(self.queijo)
-        self.pao = Pao(400, 300)
-        self.paos.append(self.pao)
-        self.carne = Carne(350, 300)
-        self.carnes.append(self.carne)
 
         self.player1 = Romerio(750, 200)
         self.player2 = Brito(250, 200)
@@ -67,17 +61,11 @@ class Jogo:
             if evento.type == pygame.QUIT:
                 self.rodando = False
 
-            self.player1.verificar_habilidades(evento, self.tomate, self.armarios, self.armarios_queijo, self.armarios_tomate, self.tomates, self.queijos, self.paos, self.carnes)
-            self.player2.verificar_habilidades(evento, self.tomate, self.armarios, self.armarios_queijo, self.armarios_tomate, self.tomates, self.queijos, self.paos, self.carnes)
+            self.player1.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
+            self.player2.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
 
-            self.player1.verificar_habilidades(evento, self.queijo, self.armarios, self.armarios_queijo, self.armarios_tomate, self.tomates, self.queijos, self.paos, self.carnes)
-            self.player2.verificar_habilidades(evento, self.queijo, self.armarios, self.armarios_queijo, self.armarios_tomate, self.tomates, self.queijos, self.paos, self.carnes)
-
-            self.player1.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas, self.tomates, self.queijos, self.paos)
-            self.player2.verificar_cortagem(evento, self.tomate, self.mapa1.tabuas, self.tomates, self.queijos, self.paos)
-
-            self.player1.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas, self.tomates, self.queijos, self.paos)
-            self.player2.verificar_cortagem(evento, self.queijo, self.mapa1.tabuas, self.tomates, self.queijos, self.paos)
+            self.player1.verificar_cortagem(evento, self.mapa1.tabuas, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
+            self.player2.verificar_cortagem(evento, self.mapa1.tabuas, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
 
         self.player1.mover(self.mapa1.colisoes)
         self.player2.mover(self.mapa1.colisoes)
@@ -86,11 +74,14 @@ class Jogo:
             tomate.atualizar()
         for queijo in self.queijos:
             queijo.atualizar()
+        for alface in self.alfaces:
+            alface.atualizar()
         for pao in self.paos:
             pao.atualizar()
         for carne in self.carnes:
             carne.atualizar()
-
+            carne.assar_ingrediente(self.mapa1.fornos)
+            
     def desenhar(self):
         self.tela.fill(PRETO)
         self.mapa1.desenhar(self.tela)
@@ -102,6 +93,8 @@ class Jogo:
             tomate.desenhar(self.tela)
         for queijo in self.queijos:
             queijo.desenhar(self.tela)
+        for alface in self.alfaces:
+            alface.desenhar(self.tela)
         for pao in self.paos:
             pao.desenhar(self.tela)
         for carne in self.carnes:
