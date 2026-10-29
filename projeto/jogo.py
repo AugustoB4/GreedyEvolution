@@ -1,3 +1,4 @@
+import os
 import pygame
 
 from constantes import *
@@ -99,7 +100,7 @@ class Jogo:
             pao.desenhar(self.tela)
         for carne in self.carnes:
             carne.desenhar(self.tela)
-
+        self.mapa1.desenhar_preparo(self.tela, self.carnes)
         pygame.display.flip()
 
     def iniciar(self):

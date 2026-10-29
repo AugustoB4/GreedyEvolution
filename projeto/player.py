@@ -296,6 +296,8 @@ class Personagem:
                         item.cortar_ingrediente()
                         return
 
+
+    
     def largar(self):
         if not self.objeto:
             return
@@ -311,31 +313,50 @@ class Personagem:
         if coluna < 0 or coluna >= len(MAPA[linha]):
             return
 
-        centro_x = (coluna * TILE_SIZE + TILE_SIZE // 2)
-        centro_y = (linha * TILE_SIZE + TILE_SIZE // 2)
+        letra = MAPA[linha][coluna]
 
-        self.objeto.dono = None
-        self.objeto.x = (centro_x - self.objeto.rect.width // 2)
-        self.objeto.y = (centro_y - self.objeto.rect.height // 2)
-        self.objeto.rect.topleft = (self.objeto.x, self.objeto.y)
+        # Permitir largar no chão, na tábua ou no fogão.
+        if letra not in ("F", "B", "O", "1", "2", "3", "4"):
+            return
+
+        centro_x = coluna * TILE_SIZE + TILE_SIZE // 2
+        centro_y = linha * TILE_SIZE + TILE_SIZE // 2
+
+        ingrediente = self.objeto
+        ingrediente.dono = None
+
+        ingrediente.x = centro_x - ingrediente.rect.width // 2
+        ingrediente.y = centro_y - ingrediente.rect.height // 2
+        ingrediente.rect.topleft = (ingrediente.x, ingrediente.y)
+
         self.objeto = None
 
-    def verificar_habilidades(self, evento, armarios, armarios_queijo, armarios_tomate,
-                              armarios_alface, geladeiras, tomates, alfaces, queijos,
-                              paos, carnes):
+    def verificar_habilidades(
+        self, evento, armarios, armarios_queijo, armarios_tomate,
+        armarios_alface, geladeiras, tomates, alfaces, queijos,
+        paos, carnes
+    ):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
-                self.pegar(armarios, armarios_queijo, armarios_tomate, armarios_alface,
-                           geladeiras, tomates, alfaces, queijos, paos, carnes)
+                self.pegar(
+                    armarios, armarios_queijo, armarios_tomate,
+                    armarios_alface, geladeiras, tomates,
+                    alfaces, queijos, paos, carnes
+                )
 
             elif evento.key == self.teclas["largar"]:
                 self.largar()
 
-    def verificar_cortagem(self, evento, tabuas, tomates, alfaces, queijos, paos,
-                           carnes):
+    def verificar_cortagem(
+        self, evento, tabuas, tomates, alfaces, queijos, paos, carnes
+    ):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["cortar"]:
-                self.cortar(tabuas, tomates, alfaces, queijos, paos, carnes)
+                self.cortar(
+                    tabuas, tomates, alfaces, queijos, paos, carnes
+                )
+
+
 class Romerio(Personagem):
     def __init__(self, x, y):
         teclas = {
@@ -347,21 +368,25 @@ class Romerio(Personagem):
             "cima": pygame.K_UP,
             "baixo": pygame.K_DOWN
         }
-        super().__init__(x, y, os.path.join(PLAYER_DIR,"Romerio.png"),teclas)
+        super().__init__(
+            x, y, os.path.join(PLAYER_DIR, "Romerio.png"), teclas
+        )
+
 
 class Brito(Personagem):
     def __init__(self, x, y):
         teclas = {
-            "pegar": pygame.K_q,
-            "largar": pygame.K_1,
-            "cortar": pygame.K_2,
+            "pegar": pygame.K_LSHIFT,
+            "largar": pygame.K_LCTRL,
+            "cortar": pygame.K_f,
             "esquerda": pygame.K_a,
             "direita": pygame.K_d,
             "cima": pygame.K_w,
             "baixo": pygame.K_s
         }
-
-        super().__init__(x, y, os.path.join(PLAYER_DIR, "Brito.png"),teclas)
+        super().__init__(
+            x, y, os.path.join(PLAYER_DIR, "Brito.png"), teclas
+        )
 
     def desenhar(self, tela):
         return super().desenhar(tela)

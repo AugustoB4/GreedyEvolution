@@ -141,7 +141,18 @@ class Mapa:
 
                 tela.blit(sprite,(coluna * TILE_SIZE, linha * TILE_SIZE))
 
-        # os tomates dentro do armário ficam ocultos até o clique de pegar
+         # os tomates dentro do armário ficam ocultos até o clique de pegar
+
+
+    def desenhar_preparo(self, tela, ingredientes):
+        for ingrediente in ingredientes:
+            if ingrediente.nome != "Meat":
+                continue
+            for forno in self.fornos:
+                if ingrediente.rect.colliderect(forno.rect):
+                    ingrediente.desenhar_animacao_forno(tela, forno)
+                    ingrediente.desenhar_barra_preparo(tela, forno)
+
 
     def criar_colisoes(self):
         self.colisoes.clear()
