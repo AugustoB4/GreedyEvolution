@@ -150,7 +150,6 @@ class Mapa:
                 continue
             for forno in self.fornos:
                 if ingrediente.rect.colliderect(forno.rect):
-                    ingrediente.desenhar_animacao_forno(tela, forno)
                     ingrediente.desenhar_barra_preparo(tela, forno)
 
 

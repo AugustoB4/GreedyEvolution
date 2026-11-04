@@ -21,6 +21,14 @@ class Ingrediente:
         self.sprite = pygame.transform.scale(self.sprite, (32, 32))
         self.rect = self.sprite.get_rect(topleft=(x, y))
 
+        self.barra_sheet = pygame.image.load( os.path.join(ANIMATION_DIR, "CookingBar.png")).convert_alpha()
+        self.barras_cozimento = []
+
+        for i in range(6):
+            sprite = self.barra_sheet.subsurface((0, 1 + i * 10, 32, 10))
+            sprite = pygame.transform.scale(sprite, (64, 20))
+            self.barras_cozimento.append(sprite)
+
         self.dono = None
         self.corte = True
         self.cru = True
@@ -55,14 +63,14 @@ class Ingrediente:
             self.cortado = True
 
     def assar_ingrediente(self, fornos):
-        if self.nome != "Meat" or self.assado or self.queimado:
+        if self.nome != "Meat" or self.queimado:
             return
 
         for forno in fornos:
             if self.rect.colliderect(forno.rect):
                 self.cont += 1
 
-                if self.cont >= 40:
+                if self.cont >= 800 and not self.queimado:
                     caminho = os.path.join(
                         INGREDIENTS_DIR, "BurnedMeat.png"
                     )
@@ -70,8 +78,9 @@ class Ingrediente:
                     self.sprite = pygame.transform.scale(self.sprite, (32, 32))
                     self.queimado = True
                     self.assado = False
+                    self.cru = False
 
-                elif self.cont >= 8:
+                elif self.cont >= 500 and not self.assado and not self.queimado:
                     caminho = os.path.join(
                         INGREDIENTS_DIR, "CookedMeat.png"
                     )
@@ -82,26 +91,33 @@ class Ingrediente:
 
                 return
 
-    def desenhar_animacao_forno(self, tela, forno):
-        if self.nome == "Meat" and self.cont > 0 and not self.queimado:
-            tela.blit(self.sprite_forno, (forno.posX, forno.posY))
-
     def desenhar_barra_preparo(self, tela, forno):
-        if self.nome != "Meat" or self.cont == 0 or self.assado or self.queimado:
+        if self.nome != "Meat" or self.cont == 0:
             return
 
-        largura = 32
-        altura = 5
-        progresso = min(self.cont / 40, 1)
+        if self.cont < 50:
+            indice = 0
 
-        pygame.draw.rect(
-            tela, (60, 60, 60),
-            (forno.posX, forno.posY - 8, largura, altura)
-        )
-        pygame.draw.rect(
-            tela, (255, 180, 0),
-            (forno.posX, forno.posY - 8, int(largura * progresso), altura)
-        )
+        elif self.cont < 500:
+            indice = 1
+
+        elif self.cont < 600:
+            indice = 2
+
+        elif self.cont < 700:
+            indice = 3
+
+        elif self.cont < 800:
+            indice = 4
+
+        else:
+            indice = 5
+
+        barra = self.barras_cozimento[indice]
+
+        tela.blit(barra ,(forno.posX - 16, forno.posY - 25))
+
+
 
     def desenhar(self, tela):
         tela.blit(self.sprite, (self.x, self.y))
