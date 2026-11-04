@@ -5,6 +5,7 @@ from mapa import *
 from itens import *
 from constantes import *
 from caminhos import PLAYER_DIR
+from sons import som_pegar, som_corte, som_fritura
 
 
 # Classe base
@@ -169,6 +170,8 @@ class Personagem:
 
     def pegar(self, armarios, armarios_queijo, armarios_tomate, armarios_alface,
               geladeiras, tomates, alfaces, queijos, paos, carnes):
+        som_pegar.play()
+
         area = self.area_interacao()
 
         if self.objeto:
@@ -180,6 +183,7 @@ class Personagem:
             if item.dono is None and area.colliderect(item.rect):
                 item.dono = self
                 self.objeto = item
+                som_pegar.play()
                 return
             
         for item in list(alfaces):
@@ -188,6 +192,7 @@ class Personagem:
             if item.dono is None and area.colliderect(item.rect):
                 item.dono = self
                 self.objeto = item
+                som_pegar.play()
                 return
             
         for item in list(queijos):
@@ -196,6 +201,7 @@ class Personagem:
             if item.dono is None and area.colliderect(item.rect):
                 item.dono = self
                 self.objeto = item
+                som_pegar.play()
                 return
             
         for item in list(paos):
@@ -204,6 +210,7 @@ class Personagem:
             if item.dono is None and area.colliderect(item.rect):
                 item.dono = self
                 self.objeto = item
+                som_pegar.play()
                 return
             
         for item in list(carnes):
@@ -212,6 +219,7 @@ class Personagem:
             if item.dono is None and area.colliderect(item.rect):
                 item.dono = self
                 self.objeto = item
+                som_pegar.play()
                 return
 
         for armario_tomate in armarios_tomate:
@@ -270,30 +278,35 @@ class Personagem:
                 if item and item.dono is None and item.corte and not item.cortado:
                     if item.rect.colliderect(tabua.rect):
                         item.cortar_ingrediente()
+                        som_corte.play()
                         return
 
             for item in alfaces:
                 if item and item.dono is None and item.corte and not item.cortado:
                     if item.rect.colliderect(tabua.rect):
                         item.cortar_ingrediente()
+                        som_corte.play()
                         return
 
             for item in queijos:
                 if item and item.dono is None and item.corte and not item.cortado:
                     if item.rect.colliderect(tabua.rect):
                         item.cortar_ingrediente()
+                        som_corte.play()
                         return
 
             for item in paos:
                 if item and item.dono is None and item.corte and not item.cortado:
                     if item.rect.colliderect(tabua.rect):
                         item.cortar_ingrediente()
+                        som_corte.play()
                         return
 
             for item in carnes:
                 if item and item.dono is None and item.corte and not item.cortado:
                     if item.rect.colliderect(tabua.rect):
                         item.cortar_ingrediente()
+                        som_corte.play()
                         return
 
 

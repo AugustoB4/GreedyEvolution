@@ -9,6 +9,15 @@ BASE_FS = os.path.dirname(
 BASE_BT = os.path.dirname(
     os.path.abspath(__file__)
 )
+BASE_PG = os.path.dirname(
+    os.path.abspath(__file__)
+)
+BASE_CT = os.path.dirname(
+    os.path.abspath(__file__)
+)
+BASE_FT = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
 SPRITES_DIR = os.path.join(
     BASE_DIR, "assets", "sprites"
@@ -47,4 +56,13 @@ SOUNDS_FS = os.path.join(
 SOUNDS_BT = os.path.join(
     BASE_BT, "assets", "sounds"
 
+)
+SOUNDS_PG = os.path.join(
+    BASE_PG, "assets", "sounds"
+)
+SOUNDS_CT = os.path.join(
+    BASE_CT, "assets", "sounds"
+)
+SOUNDS_FT = os.path.join(
+    BASE_FT, "assets", "sounds"
 )
