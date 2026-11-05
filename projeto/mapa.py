@@ -18,7 +18,7 @@ MAPA = [
     "W1FF1111FF2FF1111FF1W",
     "W1FF2LT2FFFFF4332FF1W",
     "W1FFFFFFFFFFFFFFFFF1W",
-    "W1FFFFFFFF1FFFFFFFF1W",
+    "W1UFFFFFFF1FFFFFFFF1W",
     "W1111111111111111111W",
     "WWWWWWWWWWWWWWWWWWWWW",
 ]
@@ -93,6 +93,14 @@ class Geladeira:
 
         self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
 
+class Lixeira:
+    def __init__(self, x, y):
+        self.posX = x
+        self.posY = y
+
+
+        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+
 class Mapa:
     def __init__(self):
         self.tabuas = []
@@ -102,6 +110,7 @@ class Mapa:
         self.armarios_alface = []
         self.armarios_queijo = []
         self.geladeiras = []
+        self.lixos = []
         self.colisoes = []
         self.tiles = {
 
@@ -121,7 +130,8 @@ class Mapa:
             'O': pygame.image.load(os.path.join(TILES_DIR, "Oven.png")).convert_alpha(),
             'R': pygame.image.load(os.path.join(TILES_DIR, "Refrigerator.png")).convert_alpha(),
             'L': pygame.image.load(os.path.join(TILES_DIR, "LettuceDispenser.png")).convert_alpha(),
-            'T': pygame.image.load(os.path.join(TILES_DIR, "TomatoDispenser.png")).convert_alpha()
+            'T': pygame.image.load(os.path.join(TILES_DIR, "TomatoDispenser.png")).convert_alpha(),
+            'U': pygame.image.load(os.path.join(TILES_DIR, "TrashCan.png")).convert_alpha()
         }
 
     def desenhar(self, tela):
@@ -166,7 +176,7 @@ class Mapa:
         
         for linha, texto in enumerate(MAPA):
             for coluna, letra in enumerate(texto):
-                if letra in ("1", "2", "3", "4", "B", "C", "W", "S", "M", "O", "N", "R", "L", "T"): # Adiciona colisão ao tile
+                if letra in ("1", "2", "3", "4", "B", "C", "W", "S", "M", "O", "N", "R", "L", "T", "U"): # Adiciona colisão ao tile
                     self.colisoes.append(
                         pygame.Rect(
                             coluna * TILE_SIZE,
@@ -176,10 +186,16 @@ class Mapa:
                         )
                     )
 
+                if letra == "U":
+                    x = coluna * TILE_SIZE
+                    y = linha * TILE_SIZE
+                    self.lixos.append(Lixeira(x, y))
+
                 if letra == "B":
                     x = coluna * TILE_SIZE
                     y = linha * TILE_SIZE
                     self.tabuas.append(Tabua(x, y))
+
 
                 if letra == "O":
                     x = coluna * TILE_SIZE

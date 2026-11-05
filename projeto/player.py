@@ -168,10 +168,8 @@ class Personagem:
 
         return area
 
-    def pegar(self, armarios, armarios_queijo, armarios_tomate, armarios_alface,
-              geladeiras, tomates, alfaces, queijos, paos, carnes):
+    def pegar(self, armarios, armarios_queijo, armarios_tomate, armarios_alface, geladeiras, tomates, alfaces, queijos, paos, carnes):
         som_pegar.play()
-
         area = self.area_interacao()
 
         if self.objeto:
@@ -310,15 +308,28 @@ class Personagem:
                         return
 
 
-    
-    def largar(self):
+    def largar(self, lixeiras, tomates, alfaces, queijos, paos, carnes):
         if not self.objeto:
             return
 
         area = self.area_interacao()
+        ingrediente = self.objeto
 
         coluna = area.centerx // TILE_SIZE
         linha = area.centery // TILE_SIZE
+
+        for lix in lixeiras:
+            if area.colliderect(lix):
+                for lista in (tomates, queijos, paos, carnes, alfaces):
+                    if ingrediente in lista:
+                        lista.remove(ingrediente)
+                        break
+                
+                ingrediente.dono = None
+                self.objeto = None
+                return
+
+                
 
         if linha < 0 or linha >= len(MAPA):
             return
@@ -344,21 +355,13 @@ class Personagem:
 
         self.objeto = None
 
-    def verificar_habilidades(
-        self, evento, armarios, armarios_queijo, armarios_tomate,
-        armarios_alface, geladeiras, tomates, alfaces, queijos,
-        paos, carnes
-    ):
+    def verificar_habilidades(self, evento, armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates, alfaces, queijos,paos, carnes, lixeiras):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
-                self.pegar(
-                    armarios, armarios_queijo, armarios_tomate,
-                    armarios_alface, geladeiras, tomates,
-                    alfaces, queijos, paos, carnes
-                )
+                self.pegar(armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates,alfaces, queijos, paos, carnes)
 
             elif evento.key == self.teclas["largar"]:
-                self.largar()
+                self.largar(lixeiras, tomates, alfaces, queijos, paos, carnes)
 
     def verificar_cortagem(
         self, evento, tabuas, tomates, alfaces, queijos, paos, carnes

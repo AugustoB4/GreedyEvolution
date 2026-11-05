@@ -32,6 +32,7 @@ class Jogo:
         self.armarios_tomate = self.mapa1.armarios_tomate
         self.armarios_alface = self.mapa1.armarios_alface
         self.geladeiras = self.mapa1.geladeiras
+        self.lixeiras = self.mapa1.lixos
 
         self.background = pygame.image.load(
             os.path.join(
@@ -62,8 +63,8 @@ class Jogo:
             if evento.type == pygame.QUIT:
                 self.rodando = False
 
-            self.player1.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
-            self.player2.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
+            self.player1.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes, self.lixeiras)
+            self.player2.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes, self.lixeiras)
 
             self.player1.verificar_cortagem(evento, self.mapa1.tabuas, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
             self.player2.verificar_cortagem(evento, self.mapa1.tabuas, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
