@@ -31,6 +31,11 @@ ANIMATION_DIR = os.path.join(
     SPRITES_DIR, "animations"
 )
 
+PINS_DIR = os.path.join(
+    SPRITES_DIR, "pins"
+)
+
+
 INGREDIENTS_DIR = os.path.join(
     SPRITES_DIR, "ingredients"
 )

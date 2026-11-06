@@ -67,7 +67,7 @@ class Ingrediente:
             return
 
         for forno in fornos:
-            if self.rect.colliderect(forno.rect):
+            if self.rect.colliderect(forno.rect) and self.dono == None:
                 self.cont += 1
 
                 if self.cont >= 800 and not self.queimado:
@@ -95,7 +95,7 @@ class Ingrediente:
         if self.nome != "Meat" or self.cont == 0:
             return
 
-        if self.cont < 50:
+        if self.cont < 300:
             indice = 0
 
         elif self.cont < 500:

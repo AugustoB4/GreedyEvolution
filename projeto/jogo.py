@@ -71,6 +71,10 @@ class Jogo:
 
         self.player1.mover(self.mapa1.colisoes)
         self.player2.mover(self.mapa1.colisoes)
+        
+        self.player1.verificar_indicador(self.lixeiras, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
+
+        self.player2.verificar_indicador(self.lixeiras, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
 
         for tomate in self.tomates:
             tomate.atualizar()
@@ -87,21 +91,29 @@ class Jogo:
     def desenhar(self):
         self.tela.fill(PRETO)
         self.mapa1.desenhar(self.tela)
+        
+        self.mapa1.desenhar_preparo(self.tela, self.carnes)
+        
+        self.player1.desenhar_indicador(self.tela)
+        self.player2.desenhar_indicador(self.tela)
+        
+        for tomate in self.tomates:
+            tomate.desenhar(self.tela)
+            
+        for queijo in self.queijos:
+            queijo.desenhar(self.tela)
+            
+        for alface in self.alfaces:
+            alface.desenhar(self.tela)
+            
+        for pao in self.paos:
+            pao.desenhar(self.tela)
+            
+        for carne in self.carnes:
+            carne.desenhar(self.tela)
 
         self.player1.desenhar(self.tela)
         self.player2.desenhar(self.tela)
-
-        for tomate in self.tomates:
-            tomate.desenhar(self.tela)
-        for queijo in self.queijos:
-            queijo.desenhar(self.tela)
-        for alface in self.alfaces:
-            alface.desenhar(self.tela)
-        for pao in self.paos:
-            pao.desenhar(self.tela)
-        for carne in self.carnes:
-            carne.desenhar(self.tela)
-        self.mapa1.desenhar_preparo(self.tela, self.carnes)
         pygame.display.flip()
 
     def iniciar(self):

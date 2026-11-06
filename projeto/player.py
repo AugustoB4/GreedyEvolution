@@ -4,6 +4,7 @@ import pygame
 from mapa import *
 from itens import *
 from constantes import *
+from indicadores import *
 from caminhos import PLAYER_DIR
 from sons import som_pegar, som_corte, som_fritura
 
@@ -23,6 +24,7 @@ class Personagem:
         self.teclas = teclas
         self.velocidade = VELOCIDADE
         self.objeto = None
+        self.indicador = None
 
         self.sprite_sheet = pygame.image.load(sprite_path).convert_alpha()
 
@@ -167,6 +169,45 @@ class Personagem:
                 )
 
         return area
+    
+    def verificar_indicador(self, lixeiras, armarios, armarios_queijo,armarios_tomate, armarios_alface,geladeiras, tomates, alfaces,queijos, paos, carnes):
+        area = self.area_interacao()
+        encontrou = False
+
+        for lista in (tomates, alfaces, queijos, paos, carnes):
+            for item in lista:
+                if item is None:
+                    continue
+
+                if item.dono is None and area.colliderect(item.rect):
+                    encontrou = True
+                    if self.indicador is None:
+                        self.indicador = IndPegar(self)
+                    break
+
+            if encontrou:
+                break
+
+        if not encontrou:
+            fontes = ((lixeiras, IndSoltar), (armarios, IndPegarPao),(armarios_queijo, IndPegarQueijo),(armarios_tomate, IndPegarTomate),(armarios_alface, IndPegarAlface),(geladeiras, IndPegarCarne))
+            for lista, classe_indicador in fontes:
+                for armario in lista:
+                    if area.colliderect(armario.rect):
+                        encontrou = True
+
+                        if self.indicador is None:
+                            self.indicador = classe_indicador(self)
+                        break
+
+                if encontrou:
+                    break
+
+        if not encontrou:
+            self.indicador = None 
+            
+    def desenhar_indicador(self, tela):
+        if self.indicador is not None:
+            self.indicador.desenhar(tela)  
 
     def pegar(self, armarios, armarios_queijo, armarios_tomate, armarios_alface, geladeiras, tomates, alfaces, queijos, paos, carnes):
         som_pegar.play()
@@ -394,7 +435,7 @@ class Brito(Personagem):
         teclas = {
             "pegar": pygame.K_LSHIFT,
             "largar": pygame.K_LCTRL,
-            "cortar": pygame.K_f,
+            "cortar": pygame.K_q,
             "esquerda": pygame.K_a,
             "direita": pygame.K_d,
             "cima": pygame.K_w,
