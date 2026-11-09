@@ -218,10 +218,18 @@ class Personagem:
         
         for montagem in montagens:
             if area.colliderect(montagem.rect):
-
+                ingredientes_montados = list(montagem.ingredientes)
                 ingrediente = montagem.pegar_ingrediente()
 
                 if ingrediente:
+                    if ingrediente.nome == "Hamburguer":
+                        for item_montado in ingredientes_montados:
+                            for lista in (tomates, alfaces, queijos, paos, carnes):
+                                if item_montado in lista:
+                                    lista.remove(item_montado)
+                                    break
+                        paos.append(ingrediente)
+
                     ingrediente.dono = self
                     self.objeto = ingrediente
                     ingrediente.atualizar()
@@ -396,8 +404,14 @@ class Personagem:
         if letra in ("1", "2", "3", "4"):
             for montagem in montagens:
                 if montagem.rect.collidepoint(area.center):
+                    if ingrediente.nome == "Hamburguer":
+                        colocado = montagem.colocar_hamburguer(ingrediente)
+                        if colocado and ingrediente in paos:
+                            paos.remove(ingrediente)
+                    else:
+                        colocado = montagem.adicionar_ingrediente(ingrediente)
 
-                    if montagem.adicionar_ingrediente(ingrediente):
+                    if colocado:
                         self.objeto = None
 
                     return

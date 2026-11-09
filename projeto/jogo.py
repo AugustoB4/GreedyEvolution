@@ -65,6 +65,7 @@ class Jogo:
                 self.rodando = False
 
             self.player1.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes, self.lixeiras, self.montagens)
+            self.player2.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes, self.lixeiras, self.montagens)
 
             self.player1.verificar_cortagem(evento, self.mapa1.tabuas, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
             self.player2.verificar_cortagem(evento, self.mapa1.tabuas, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
@@ -73,7 +74,6 @@ class Jogo:
         self.player2.mover(self.mapa1.colisoes)
         
         self.player1.verificar_indicador(self.lixeiras, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
-
         self.player2.verificar_indicador(self.lixeiras, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
 
         for tomate in self.tomates:
@@ -114,6 +114,9 @@ class Jogo:
             
         for carne in self.carnes:
             carne.desenhar(self.tela)
+
+        for montagem in self.montagens:
+            montagem.desenhar(self.tela)
 
         pygame.display.flip()
 

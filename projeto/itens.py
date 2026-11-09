@@ -2,7 +2,7 @@ import os
 import pygame
 
 from constantes import VERMELHO
-from caminhos import INGREDIENTS_DIR, ANIMATION_DIR
+from caminhos import INGREDIENTS_DIR, ANIMATION_DIR, ORDERS_DIR
 
 
 class Ingrediente:
@@ -30,6 +30,7 @@ class Ingrediente:
             self.barras_cozimento.append(sprite)
 
         self.dono = None
+        self.em_montagem = False
         self.corte = True
         self.cru = True
         self.assado = False
@@ -120,6 +121,9 @@ class Ingrediente:
 
 
     def desenhar(self, tela):
+        if self.em_montagem:
+            return
+
         tela.blit(self.sprite, (self.x, self.y))
 
 
@@ -146,3 +150,19 @@ class Pao(Ingrediente):
 class Carne(Ingrediente):
     def __init__(self, x, y):
         super().__init__(x, y, os.path.join(INGREDIENTS_DIR, "RawMeat.png"), "Meat")
+
+
+class Hamburguer(Ingrediente):
+    def __init__(self, x, y, com_tomate=False, com_alface=False):
+        if com_alface:
+            sprite = "3Hamburguer.png"
+        elif com_tomate:
+            sprite = "2Hamburguer.png"
+        else:
+            sprite = "1Hamburguer.png"
+        super().__init__(
+            x, y, os.path.join(ORDERS_DIR, sprite), "Hamburguer"
+        )
+        self.com_tomate = com_tomate
+        self.com_alface = com_alface
+        self.corte = False
