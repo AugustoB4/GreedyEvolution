@@ -52,6 +52,10 @@ UI_DIR = os.path.join(
     SPRITES_DIR, "ui"
 )
 
+ORDERS_DIR = os.path.join(
+    SPRITES_DIR, "orders"
+)
+
 SOUNDS_DIR = os.path.join(
     BASE_DIR, "assets", "sounds"
 )

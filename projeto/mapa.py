@@ -3,6 +3,7 @@ import pygame
 
 from constantes import TILE_SIZE
 from caminhos import TILES_DIR
+from montagem import Montagem
 from caminhos import SOUNDS_DIR, SOUNDS_FS, SOUNDS_BT
 from itens import *
 
@@ -133,6 +134,18 @@ class Mapa:
             'T': pygame.image.load(os.path.join(TILES_DIR, "TomatoDispenser.png")).convert_alpha(),
             'U': pygame.image.load(os.path.join(TILES_DIR, "TrashCan.png")).convert_alpha()
         }
+        
+        self.montagens = []
+
+        for linha, texto in enumerate(MAPA):
+            for coluna, letra in enumerate(texto):
+
+                if letra in ("1", "2", "3", "4"):
+                    x = coluna * TILE_SIZE
+                    y = linha * TILE_SIZE
+
+                    montagem = Montagem(x, y)
+                    self.montagens.append(montagem)
 
     def desenhar(self, tela):
         for linha, caractere in enumerate(MAPA):

@@ -27,6 +27,7 @@ class Jogo:
 
         self.mapa1 = Mapa()
         self.mapa1.criar_colisoes()
+        self.montagens = self.mapa1.montagens
         self.armarios = self.mapa1.armarios
         self.armarios_queijo = self.mapa1.armarios_queijo
         self.armarios_tomate = self.mapa1.armarios_tomate
@@ -63,8 +64,7 @@ class Jogo:
             if evento.type == pygame.QUIT:
                 self.rodando = False
 
-            self.player1.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes, self.lixeiras)
-            self.player2.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes, self.lixeiras)
+            self.player1.verificar_habilidades(evento, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes, self.lixeiras, self.montagens)
 
             self.player1.verificar_cortagem(evento, self.mapa1.tabuas, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
             self.player2.verificar_cortagem(evento, self.mapa1.tabuas, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
@@ -97,6 +97,9 @@ class Jogo:
         self.player1.desenhar_indicador(self.tela)
         self.player2.desenhar_indicador(self.tela)
         
+        self.player1.desenhar(self.tela)
+        self.player2.desenhar(self.tela)
+        
         for tomate in self.tomates:
             tomate.desenhar(self.tela)
             
@@ -112,8 +115,6 @@ class Jogo:
         for carne in self.carnes:
             carne.desenhar(self.tela)
 
-        self.player1.desenhar(self.tela)
-        self.player2.desenhar(self.tela)
         pygame.display.flip()
 
     def iniciar(self):

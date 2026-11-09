@@ -209,12 +209,25 @@ class Personagem:
         if self.indicador is not None:
             self.indicador.desenhar(tela)  
 
-    def pegar(self, armarios, armarios_queijo, armarios_tomate, armarios_alface, geladeiras, tomates, alfaces, queijos, paos, carnes):
-        som_pegar.play()
+    def pegar(self, armarios, armarios_queijo, armarios_tomate, armarios_alface, geladeiras, tomates, alfaces, queijos, paos, carnes, montagens):
+        
         area = self.area_interacao()
 
         if self.objeto:
             return
+        
+        for montagem in montagens:
+            if area.colliderect(montagem.rect):
+
+                ingrediente = montagem.pegar_ingrediente()
+
+                if ingrediente:
+                    ingrediente.dono = self
+                    self.objeto = ingrediente
+                    ingrediente.atualizar()
+                    som_pegar.play()
+                    
+                return
 
         for item in list(tomates):
             if item is None:
@@ -349,7 +362,7 @@ class Personagem:
                         return
 
 
-    def largar(self, lixeiras, tomates, alfaces, queijos, paos, carnes):
+    def largar(self, lixeiras, tomates, alfaces, queijos, paos, carnes, montagens):
         if not self.objeto:
             return
 
@@ -360,7 +373,7 @@ class Personagem:
         linha = area.centery // TILE_SIZE
 
         for lix in lixeiras:
-            if area.colliderect(lix):
+            if area.colliderect(lix.rect):
                 for lista in (tomates, queijos, paos, carnes, alfaces):
                     if ingrediente in lista:
                         lista.remove(ingrediente)
@@ -379,9 +392,17 @@ class Personagem:
             return
 
         letra = MAPA[linha][coluna]
+        
+        if letra in ("1", "2", "3", "4"):
+            for montagem in montagens:
+                if montagem.rect.collidepoint(area.center):
 
-        # Permitir largar no chão, na tábua ou no fogão.
-        if letra not in ("F", "B", "O", "1", "2", "3", "4"):
+                    if montagem.adicionar_ingrediente(ingrediente):
+                        self.objeto = None
+
+                    return
+
+        if letra not in ("F", "B", "O"):
             return
 
         centro_x = coluna * TILE_SIZE + TILE_SIZE // 2
@@ -396,13 +417,13 @@ class Personagem:
 
         self.objeto = None
 
-    def verificar_habilidades(self, evento, armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates, alfaces, queijos,paos, carnes, lixeiras):
+    def verificar_habilidades(self, evento, armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates, alfaces, queijos,paos, carnes, lixeiras, montagens):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
-                self.pegar(armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates,alfaces, queijos, paos, carnes)
+                self.pegar(armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates,alfaces, queijos, paos, carnes, montagens)
 
             elif evento.key == self.teclas["largar"]:
-                self.largar(lixeiras, tomates, alfaces, queijos, paos, carnes)
+                self.largar(lixeiras, tomates, alfaces, queijos, paos, carnes, montagens)
 
     def verificar_cortagem(
         self, evento, tabuas, tomates, alfaces, queijos, paos, carnes
