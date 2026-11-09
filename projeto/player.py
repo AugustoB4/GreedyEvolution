@@ -227,7 +227,7 @@ class Personagem:
                     ingrediente.atualizar()
                     som_pegar.play()
                     
-                return
+                    return
 
         for item in list(tomates):
             if item is None:
