@@ -370,12 +370,28 @@ class Personagem:
                         return
 
 
-    def largar(self, lixeiras, tomates, alfaces, queijos, paos, carnes, montagens):
+    def largar(self, lixeiras, tomates, alfaces, queijos, paos, carnes, montagens, entregas):
         if not self.objeto:
             return
 
         area = self.area_interacao()
         ingrediente = self.objeto
+        
+        for entrega in entregas:
+            if area.colliderect(entrega.rect):
+
+                if ingrediente.nome != "Hamburguer":
+                    return None
+
+                ingrediente.dono = None
+                ingrediente.em_montagem = False
+
+                if ingrediente in paos:
+                    paos.remove(ingrediente)
+
+                self.objeto = None
+
+                return ingrediente
 
         coluna = area.centerx // TILE_SIZE
         linha = area.centery // TILE_SIZE
@@ -431,13 +447,13 @@ class Personagem:
 
         self.objeto = None
 
-    def verificar_habilidades(self, evento, armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates, alfaces, queijos,paos, carnes, lixeiras, montagens):
+    def verificar_habilidades(self, evento, armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates, alfaces, queijos,paos, carnes, lixeiras, montagens, entregas):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
                 self.pegar(armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates,alfaces, queijos, paos, carnes, montagens)
 
             elif evento.key == self.teclas["largar"]:
-                self.largar(lixeiras, tomates, alfaces, queijos, paos, carnes, montagens)
+                return self.largar(lixeiras, tomates, alfaces, queijos, paos, carnes, montagens, entregas)
 
     def verificar_cortagem(
         self, evento, tabuas, tomates, alfaces, queijos, paos, carnes

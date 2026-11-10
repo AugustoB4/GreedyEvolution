@@ -1,3 +1,7 @@
+import os
+import pygame 
+from caminhos import FONTS_DIR
+
 #Atributos
 VELOCIDADE = 4
 

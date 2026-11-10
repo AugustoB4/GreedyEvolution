@@ -5,7 +5,7 @@ from caminhos import *
 class Pedido:
     def __init__(self, tempo=TEMPOFACIL, pronto=False, pontuacao=PONTUACAOFACIL, nome=""):
 
-        self.sprite = pygame.image.load(os.path.join(ORDERS_DIR, nome))
+        self.sprite = pygame.image.load(os.path.join(ORDERS_DIR, nome)).convert_alpha()
 
         self.tempo = tempo
         self.estado = pronto
@@ -37,12 +37,33 @@ class PedidoDificil(Pedido):
 
 class ReceitaTV:
     def __init__(self):
-        self.sprite = pygame.image.load(os.path.join(TILES_DIR, "RecipeTV.png"))
+        self.sprite = pygame.image.load(os.path.join(TILES_DIR, "RecipeTV.png")).convert_alpha()
         
-    def verificar_pedido(self, pedido, montagem):
-        if pedido.__class__ == montagem.__class__:
-            self.pedidocorreto = True
-            return self.pedidocorreto
+        self.fonte_titulo = pygame.font.Font(os.path.join(FONTS_DIR, "Orbitron.ttf"), 20)
+        self.fonte_ingredientes = pygame.font.Font(os.path.join(FONTS_DIR, "PressStart2P.ttf"), 9)
+        
+        self.largura = TILE_SIZE * 3
+        self.altura = TILE_SIZE * 3
+
+        self.sprite = pygame.transform.scale(self.sprite,(self.largura, self.altura))
+        
+    def desenhar(self, tela, pedido):
+        self.x = tela.get_width() - self.largura - 20
+        self.y = 0
+
+        tela.blit(self.sprite, (self.x, self.y))
+        titulo = self.fonte_titulo.render("PEDIDO", True, BRANCO)
+
+        tela.blit(titulo, (self.x + 15, self.y + 12))
+        imagem_pedido = pygame.transform.scale( pedido.sprite, (40, 40))
+
+        tela.blit(imagem_pedido, (self.x + 12, self.y + 48))
+
+        for indice, ingrediente in enumerate(pedido.ingredientes):
+            texto = self.fonte_ingredientes.render(ingrediente.upper(), True, BRANCO)
+
+            tela.blit(texto, (self.x + 58, self.y + 48 + indice * 17))
+            
                 
                 
                 

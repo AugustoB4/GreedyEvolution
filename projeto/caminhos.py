@@ -19,6 +19,10 @@ BASE_FT = os.path.dirname(
     os.path.abspath(__file__)
 )
 
+ASSETS_DIR = os.path.join(
+    BASE_DIR, "assets"
+)
+
 SPRITES_DIR = os.path.join(
     BASE_DIR, "assets", "sprites"
 )
@@ -52,6 +56,10 @@ UI_DIR = os.path.join(
     SPRITES_DIR, "ui"
 )
 
+FONTS_DIR = os.path.join(
+    ASSETS_DIR, "fonts"
+)
+
 ORDERS_DIR = os.path.join(
     SPRITES_DIR, "orders"
 )
@@ -75,3 +83,4 @@ SOUNDS_CT = os.path.join(
 SOUNDS_FT = os.path.join(
     BASE_FT, "assets", "sounds"
 )
+

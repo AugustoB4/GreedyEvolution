@@ -4,18 +4,26 @@ import pygame
 from constantes import TILE_SIZE
 from caminhos import ORDERS_DIR
 from itens import Hamburguer
+import math
 
 
 class Montagem:
     def __init__(self, x, y, pedido=None):
         self.x = x
         self.y = y
+        
+        self.animando = False
+        self.tempo_animacao = 0
+        self.duracao_animacao = 0.4
+
         self.pedido = pedido
         self.ingredientes = []
+
         self.hamburguer = None
         self.hamburguer_pronto = False
         self.hamburguer_com_tomate = False
         self.hamburguer_com_alface = False
+        
         self.sprites_hamburguer = {}
         for receita, nome_sprite in (
             ((False, False), "1Hamburguer.png"),
@@ -72,45 +80,58 @@ class Montagem:
         return True
 
     def _verificar_hamburguer(self):
-        pao_cortado = any(
-            ingrediente.nome == "Bread" and ingrediente.cortado
-            for ingrediente in self.ingredientes
-        )
-        carne_assada = any(
-            ingrediente.nome == "Meat"
-            and ingrediente.assado
-            and not ingrediente.queimado
-            for ingrediente in self.ingredientes
-        )
-        queijo_cortado = any(
-            ingrediente.nome == "Cheese" and ingrediente.cortado
-            for ingrediente in self.ingredientes
-        )
-        tomates = [
-            ingrediente
-            for ingrediente in self.ingredientes
-            if ingrediente.nome == "Tomato"
+        estava_pronto = self.hamburguer_pronto
+
+        if self.pedido is None:
+            self.hamburguer_pronto = False
+            return
+
+        nomes = {
+            "Pão": "Bread",
+            "Queijo": "Cheese",
+            "Carne": "Meat",
+            "Tomate": "Tomato",
+            "Alface": "Lettuce"
+        }
+
+        ingredientes_esperados = [
+            nomes[nome] for nome in self.pedido.ingredientes
         ]
-        tomate_cortado = bool(tomates) and all(
-            ingrediente.cortado for ingrediente in tomates
-        )
-        alfaces = [
-            ingrediente
-            for ingrediente in self.ingredientes
-            if ingrediente.nome == "Lettuce"
+
+        ingredientes_colocados = [
+            ingrediente.nome for ingrediente in self.ingredientes
         ]
-        alface_cortado = bool(alfaces) and all(
-            ingrediente.cortado for ingrediente in alfaces
+
+        ordem_correta = (
+            ingredientes_colocados == ingredientes_esperados
         )
-        self.hamburguer_com_tomate = tomate_cortado
-        self.hamburguer_com_alface = alface_cortado
+
+        preparo_correto = all(
+            (
+                ingrediente.assado and not ingrediente.queimado
+                if ingrediente.nome == "Meat"
+                else ingrediente.cortado
+            )
+            for ingrediente in self.ingredientes
+        )
+
+        self.hamburguer_com_tomate = any(
+            ingrediente.nome == "Tomato"
+            for ingrediente in self.ingredientes
+        )
+
+        self.hamburguer_com_alface = any(
+            ingrediente.nome == "Lettuce"
+            for ingrediente in self.ingredientes
+        )
+
         self.hamburguer_pronto = (
-            pao_cortado
-            and carne_assada
-            and queijo_cortado
-            and tomate_cortado
-            and alface_cortado
+            ordem_correta and preparo_correto
         )
+
+        if not estava_pronto and self.hamburguer_pronto:
+            self.animando = True
+            self.tempo_animacao = 0
     
     def pegar_ingrediente(self):
         if self.hamburguer is not None:
@@ -130,6 +151,8 @@ class Montagem:
             self.hamburguer_pronto = False
             self.hamburguer_com_tomate = False
             self.hamburguer_com_alface = False
+            self.animando = False
+            self.tempo_animacao = 0
             return hamburguer
 
         if not self.ingredientes:
@@ -139,6 +162,14 @@ class Montagem:
         ingrediente.em_montagem = False
         self._verificar_hamburguer()
         return ingrediente
+    
+    def atualizar(self, dt):
+        if self.animando:
+            self.tempo_animacao += dt
+
+            if self.tempo_animacao >= self.duracao_animacao:
+                self.animando = False
+                self.tempo_animacao = self.duracao_animacao
 
     def desenhar(self, tela):
         if self.hamburguer is not None:
@@ -146,12 +177,26 @@ class Montagem:
             return
 
         if self.hamburguer_pronto:
-            tela.blit(
-                self.sprites_hamburguer[
-                    (self.hamburguer_com_tomate, self.hamburguer_com_alface)
-                ],
-                self.rect,
+            sprite = self.sprites_hamburguer[
+                (self.hamburguer_com_tomate, self.hamburguer_com_alface)
+            ]
+
+            escala = 1
+
+            if self.animando:
+                progresso = self.tempo_animacao / self.duracao_animacao
+                escala = 1 + 0.3 * math.sin(progresso * math.pi)
+
+            largura = int(TILE_SIZE * escala)
+            altura = int(TILE_SIZE * escala)
+
+            sprite_animado = pygame.transform.scale(
+                sprite,
+                (largura, altura)
             )
+
+            rect = sprite_animado.get_rect(center=self.rect.center)
+            tela.blit(sprite_animado, rect)
             return
 
         for ingrediente in self.ingredientes:

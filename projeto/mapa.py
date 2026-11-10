@@ -101,6 +101,14 @@ class Lixeira:
 
 
         self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        
+class Entrega:
+     def __init__(self, x, y):
+        self.posX = x
+        self.posY = y
+
+
+        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
 
 class Mapa:
     def __init__(self):
@@ -112,6 +120,7 @@ class Mapa:
         self.armarios_queijo = []
         self.geladeiras = []
         self.lixos = []
+        self.entregas = []
         self.colisoes = []
         self.tiles = {
 
@@ -185,6 +194,7 @@ class Mapa:
         self.armarios_alface.clear()
         self.armarios_queijo.clear()
         self.geladeiras.clear()
+        self.entregas.clear()
         
         
         for linha, texto in enumerate(MAPA):
@@ -249,6 +259,13 @@ class Mapa:
                     geladeira = Geladeira(x, y)
                     geladeira.ingrediente = Carne(x, y)
                     self.geladeiras.append(geladeira)
+                    
+                if letra == "N":
+                    x = coluna * TILE_SIZE
+                    y = linha * TILE_SIZE
+                    entrega = Entrega(x, y)
+                    self.entregas.append(entrega)
+                    
 
     def pode_largar(self, x, y):
         coluna = x // TILE_SIZE
