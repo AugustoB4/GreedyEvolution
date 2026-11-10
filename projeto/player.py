@@ -1,6 +1,7 @@
 import os
 import pygame
 
+import math
 from mapa import *
 from itens import *
 from constantes import *
@@ -25,6 +26,12 @@ class Personagem:
         self.velocidade = VELOCIDADE
         self.objeto = None
         self.indicador = None
+        
+        self.andando = False
+        self.tempo_animacao = 0
+        
+        self.oscilacao = 0
+        self.inclinacao = 0
 
         self.sprite_sheet = pygame.image.load(sprite_path).convert_alpha()
 
@@ -49,12 +56,28 @@ class Personagem:
             "lado": 1,
             "costas": 2
         }
+        
+    def atualizar_animacao(self):
+        tempo = pygame.time.get_ticks() / 1000
+        
+        if self.andando:
+            amplitude = 2
+            frequencia = 12
+            
+        else:
+            amplitude = 1
+            frequencia = 3
+            
+        self.oscilacao = math.sin(tempo * frequencia) * amplitude
 
     def mover(self, colisoes):
         teclas_pressionadas = pygame.key.get_pressed()
 
         dirX = 0
         dirY = 0
+        
+        posicao_anterior_x = self.pos_x
+        posicao_anterior_y = self.pos_y
 
         if teclas_pressionadas[self.teclas["esquerda"]]:
             dirX = -VELOCIDADE
@@ -75,6 +98,7 @@ class Personagem:
             self.direcao = "frente"
 
         self.rect.x += dirX
+        self.atualizar_animacao()
 
         for parede in colisoes:
             if self.rect.colliderect(parede):
@@ -97,6 +121,8 @@ class Personagem:
 
         self.pos_x = self.rect.x - 16
         self.pos_y = self.rect.y - 76
+        
+        self.andando = (self.pos_x != posicao_anterior_x or self.pos_y != posicao_anterior_y)
 
     def desenhar(self, tela):
         indice = self.frames[self.direcao]
@@ -122,10 +148,10 @@ class Personagem:
             (64, 96)
         )
 
-        tela.blit(
-            sprite,
-            (self.pos_x, self.pos_y)
-        )
+        centro = (self.pos_x + 32,self.pos_y + 48 + self.oscilacao)
+
+        sprite_rect = sprite.get_rect(center=centro)
+        tela.blit(sprite, sprite_rect)
 
         pygame.draw.rect(
             tela,
