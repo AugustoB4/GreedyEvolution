@@ -15,9 +15,14 @@ BASE_PG = os.path.dirname(
 BASE_CT = os.path.dirname(
     os.path.abspath(__file__)
 )
-BASE_FT = os.path.dirname(
+BASE_AD = os.path.dirname(
     os.path.abspath(__file__)
 )
+BASE_FN = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+
 
 ASSETS_DIR = os.path.join(
     BASE_DIR, "assets"
@@ -80,7 +85,9 @@ SOUNDS_PG = os.path.join(
 SOUNDS_CT = os.path.join(
     BASE_CT, "assets", "sounds"
 )
-SOUNDS_FT = os.path.join(
-    BASE_FT, "assets", "sounds"
+SOUNDS_AD = os.path.join(
+    BASE_AD, "assets", "sounds"
 )
-
+SOUNDS_FN = os.path.join(
+    BASE_FN, "assets", "sounds"
+)

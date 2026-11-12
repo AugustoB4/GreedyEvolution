@@ -3,6 +3,7 @@ import pygame
 
 from constantes import VERMELHO
 from caminhos import INGREDIENTS_DIR, ANIMATION_DIR, ORDERS_DIR
+from sons import som_forno
 
 
 class Ingrediente:
@@ -16,6 +17,7 @@ class Ingrediente:
         self.y = y
         self.nome = nome
         self.sprite_path = sprite_path
+        self.estava_no_forno= False
 
         self.sprite = pygame.image.load(sprite_path).convert_alpha()
         self.sprite = pygame.transform.scale(self.sprite, (32, 32))
@@ -67,30 +69,35 @@ class Ingrediente:
         if self.nome != "Meat" or self.queimado:
             return
 
-        for forno in fornos:
-            if self.rect.colliderect(forno.rect) and self.dono == None:
-                self.cont += 1
+        esta_no_forno = (
+            self.dono is None
+            and any(self.rect.colliderect(forno.rect) for forno in fornos)
+        )
 
-                if self.cont >= 800 and not self.queimado:
-                    caminho = os.path.join(
-                        INGREDIENTS_DIR, "BurnedMeat.png"
-                    )
-                    self.sprite = pygame.image.load(caminho).convert_alpha()
-                    self.sprite = pygame.transform.scale(self.sprite, (32, 32))
-                    self.queimado = True
-                    self.assado = False
-                    self.cru = False
+        if not esta_no_forno:
+            self.estava_no_forno = False
+            return
 
-                elif self.cont >= 500 and not self.assado and not self.queimado:
-                    caminho = os.path.join(
-                        INGREDIENTS_DIR, "CookedMeat.png"
-                    )
-                    self.sprite = pygame.image.load(caminho).convert_alpha()
-                    self.sprite = pygame.transform.scale(self.sprite, (32, 32))
-                    self.assado = True
-                    self.cru = False
+        if not self.estava_no_forno:
+            som_forno.play()
+            self.estava_no_forno = True
 
-                return
+        self.cont += 1
+
+        if self.cont >= 800:
+            caminho = os.path.join(INGREDIENTS_DIR, "BurnedMeat.png")
+            self.sprite = pygame.image.load(caminho).convert_alpha()
+            self.sprite = pygame.transform.scale(self.sprite, (32, 32))
+            self.queimado = True
+            self.assado = False
+            self.cru = False
+
+        elif self.cont >= 500 and not self.assado:
+            caminho = os.path.join(INGREDIENTS_DIR, "CookedMeat.png")
+            self.sprite = pygame.image.load(caminho).convert_alpha()
+            self.sprite = pygame.transform.scale(self.sprite, (32, 32))
+            self.assado = True
+            self.cru = False
 
     def desenhar_barra_preparo(self, tela, forno):
         if self.nome != "Meat" or self.cont == 0:

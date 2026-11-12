@@ -7,7 +7,7 @@ from itens import *
 from constantes import *
 from indicadores import *
 from caminhos import PLAYER_DIR
-from sons import som_pegar, som_corte, som_fritura
+from sons import som_pegar, som_corte, som_andar
 
 
 # Classe base
@@ -26,7 +26,7 @@ class Personagem:
         self.velocidade = VELOCIDADE
         self.objeto = None
         self.indicador = None
-        
+        self.controle_andar = None
         self.andando = False
         self.tempo_animacao = 0
         
@@ -123,6 +123,13 @@ class Personagem:
         self.pos_y = self.rect.y - 76
         
         self.andando = (self.pos_x != posicao_anterior_x or self.pos_y != posicao_anterior_y)
+
+        if self.andando:
+            if self.controle_andar is None or not self.controle_andar.get_busy():
+                self.controle_andar = som_andar.play(loops=-1)
+        elif self.controle_andar is not None:
+            self.controle_andar.stop()
+            self.controle_andar = None
 
     def desenhar(self, tela):
         indice = self.frames[self.direcao]

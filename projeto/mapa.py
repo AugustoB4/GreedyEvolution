@@ -4,7 +4,7 @@ import pygame
 from constantes import TILE_SIZE
 from caminhos import TILES_DIR
 from montagem import Montagem
-from caminhos import SOUNDS_DIR, SOUNDS_FS, SOUNDS_BT
+from caminhos import SOUNDS_DIR, SOUNDS_FS, SOUNDS_BT, SOUNDS_FN
 from itens import *
 
 
