@@ -11,6 +11,7 @@ PRETO = (0, 0, 0)
 VERMELHO = (200, 0, 0)
 LARANJA = (255, 165, 0)
 AZUL = (0, 0, 255)
+CIANO = (65, 220, 205)
 
 #Medidas da tela
 LARGURA = 1000
@@ -32,3 +33,8 @@ PONTUACAODIFICIL = 20
 
 #Fases
 TEMPOINICIAL = 60
+
+#Seleção 
+MARGEM = 3
+TAMANHO = 7
+ESPESSURA = 3

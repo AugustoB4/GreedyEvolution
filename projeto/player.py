@@ -26,6 +26,7 @@ class Personagem:
         self.velocidade = VELOCIDADE
         self.objeto = None
         self.indicador = None
+        self.alvo_indicador = None
         self.controle_andar = None
         self.andando = False
         self.tempo_animacao = 0
@@ -160,13 +161,6 @@ class Personagem:
         sprite_rect = sprite.get_rect(center=centro)
         tela.blit(sprite, sprite_rect)
 
-        pygame.draw.rect(
-            tela,
-            (255, 0, 0),
-            self.area_interacao(),
-            2
-        )
-
     def area_interacao(self):
         if self.direcao == "frente":
             area = pygame.Rect(
@@ -206,6 +200,7 @@ class Personagem:
     def verificar_indicador(self, lixeiras, armarios, armarios_queijo,armarios_tomate, armarios_alface,geladeiras, tomates, alfaces,queijos, paos, carnes):
         area = self.area_interacao()
         encontrou = False
+        alvo = None
 
         for lista in (tomates, alfaces, queijos, paos, carnes):
             for item in lista:
@@ -214,8 +209,11 @@ class Personagem:
 
                 if item.dono is None and area.colliderect(item.rect):
                     encontrou = True
-                    if self.indicador is None:
-                        self.indicador = IndPegar(self)
+                    alvo = item
+                    if self.indicador is None or not isinstance(self.indicador, IndPegar):
+                        self.indicador = IndPegar(item)
+                    else:
+                        self.indicador.alvo = item
                     break
 
             if encontrou:
@@ -227,14 +225,20 @@ class Personagem:
                 for armario in lista:
                     if area.colliderect(armario.rect):
                         encontrou = True
-
-                        if self.indicador is None:
-                            self.indicador = classe_indicador(self)
+                        alvo = armario
+                        
+                        if self.indicador is None or not isinstance(self.indicador, classe_indicador):
+                            self.indicador = classe_indicador(armario)
+                        else:
+                            self.indicador.alvo = armario
+                            
                         break
 
                 if encontrou:
                     break
-
+        
+        self.alvo_indicador = alvo
+        
         if not encontrou:
             self.indicador = None 
             
@@ -454,11 +458,11 @@ class Personagem:
             for montagem in montagens:
                 if montagem.rect.collidepoint(area.center):
                     if ingrediente.nome == "Hamburguer":
-                        colocado = montagem.colocar_hamburguer(ingrediente)
+                        colocado = montagem.colocar_hamburguer(ingrediente, letra)
                         if colocado and ingrediente in paos:
                             paos.remove(ingrediente)
                     else:
-                        colocado = montagem.adicionar_ingrediente(ingrediente)
+                        colocado = montagem.adicionar_ingrediente(ingrediente, letra)
 
                     if colocado:
                         self.objeto = None
@@ -470,6 +474,9 @@ class Personagem:
 
         centro_x = coluna * TILE_SIZE + TILE_SIZE // 2
         centro_y = linha * TILE_SIZE + TILE_SIZE // 2
+        
+        if letra in ("O", "B"):
+            centro_y -= 18
 
         ingrediente = self.objeto
         ingrediente.dono = None

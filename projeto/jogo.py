@@ -154,12 +154,6 @@ class Jogo:
         
         self.mapa1.desenhar_preparo(self.tela, self.carnes)
         
-        self.player1.desenhar_indicador(self.tela)
-        self.player2.desenhar_indicador(self.tela)
-        
-        self.player1.desenhar(self.tela)
-        self.player2.desenhar(self.tela)
-        
         for tomate in self.tomates:
             tomate.desenhar(self.tela)
             
@@ -178,8 +172,14 @@ class Jogo:
         for montagem in self.montagens:
             montagem.desenhar(self.tela)
         
+        self.player1.desenhar_indicador(self.tela)
+        self.player2.desenhar_indicador(self.tela)
+        
+        self.player1.desenhar(self.tela)
+        self.player2.desenhar(self.tela)
+        
         self.fase.desenhar(self.tela)
-        self.televisao.desenhar(self.tela,self.pedido_atual)
+        self.televisao.desenhar(self.tela,self.pedido_atual, self.player1, self.player2)
         pygame.display.flip()
 
     def iniciar(self):

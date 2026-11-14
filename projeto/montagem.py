@@ -40,8 +40,17 @@ class Montagem:
         self.rect = pygame.Rect(
             x, y, TILE_SIZE, TILE_SIZE
         )
+        
+    def ponto_apoio(self, letra):
+        x = self.rect.centerx
+        y = self.rect.centery
 
-    def adicionar_ingrediente(self, ingrediente):
+        if letra in ("2", "3", "4"):
+            y -= 18
+
+        return x, y
+
+    def adicionar_ingrediente(self, ingrediente, letra):
         if ingrediente.nome == "Hamburguer" or self.hamburguer is not None:
             return False
 
@@ -52,9 +61,11 @@ class Montagem:
         
         if quantidade >= 5:
             return False
+        
+        centro_x, centro_y = self.ponto_apoio(letra)
               
-        x = self.rect.centerx - ingrediente.rect.width // 2
-        y = self.rect.centery - ingrediente.rect.height // 2 - (quantidade * 8)
+        x = centro_x - ingrediente.rect.width // 2
+        y = centro_y - ingrediente.rect.height // 2 - (quantidade * 8)
 
         ingrediente.dono = None
         ingrediente.em_montagem = True
@@ -67,12 +78,13 @@ class Montagem:
 
         return True
 
-    def colocar_hamburguer(self, hamburguer):
+    def colocar_hamburguer(self, hamburguer, letra):
         if self.hamburguer is not None or self.ingredientes:
             return False
 
         hamburguer.dono = None
         hamburguer.em_montagem = True
+        centro_x, centro_y = self.ponto_apoio(letra)
         hamburguer.x = self.rect.centerx - hamburguer.rect.width // 2
         hamburguer.y = self.rect.centery - hamburguer.rect.height // 2
         hamburguer.rect.topleft = (hamburguer.x, hamburguer.y)

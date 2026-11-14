@@ -46,14 +46,14 @@ class Tabua:
         self.posX = x
         self.posY = y
 
-        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        self.rect = pygame.Rect(self.posX, self.posY, 48, 48)
         
 class Forno:
     def __init__(self, x, y):
         self.posX = x
         self.posY = y
         
-        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        self.rect = pygame.Rect(self.posX, self.posY, 48, 48)
 
 class Armario:
     def __init__(self, x, y):
@@ -61,7 +61,7 @@ class Armario:
         self.posY = y
         self.ingrediente = None
 
-        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        self.rect = pygame.Rect(self.posX, self.posY, 48, 48)
 
 class ArmarioQueijo:
     def __init__(self, x, y):
@@ -69,14 +69,14 @@ class ArmarioQueijo:
         self.posY = y
         self.ingrediente = None
 
-        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        self.rect = pygame.Rect(self.posX, self.posY, 48, 48)
 class ArmarioTomate:
     def __init__(self, x, y):
         self.posX = x
         self.posY = y
         self.ingrediente = None
 
-        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        self.rect = pygame.Rect(self.posX, self.posY, 48, 48)
         
 class ArmarioAlface:
     def __init__(self, x, y):
@@ -84,7 +84,7 @@ class ArmarioAlface:
         self.posY = y
         self.ingrediente = None
 
-        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        self.rect = pygame.Rect(self.posX, self.posY, 48, 48)
         
 class Geladeira:
     def __init__(self, x, y):
@@ -92,7 +92,7 @@ class Geladeira:
         self.posY = y
         self.ingrediente = None
 
-        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        self.rect = pygame.Rect(self.posX, self.posY, 48, 48)
 
 class Lixeira:
     def __init__(self, x, y):
@@ -100,7 +100,7 @@ class Lixeira:
         self.posY = y
 
 
-        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        self.rect = pygame.Rect(self.posX, self.posY, 48, 48)
         
 class Entrega:
      def __init__(self, x, y):
@@ -108,7 +108,7 @@ class Entrega:
         self.posY = y
 
 
-        self.rect = pygame.Rect(self.posX, self.posY, 32, 32)
+        self.rect = pygame.Rect(self.posX, self.posY, 48, 48)
 
 class Mapa:
     def __init__(self):
@@ -166,10 +166,22 @@ class Mapa:
                 if letra == "M" and coluna == 20:
                     sprite = pygame.transform.rotate(sprite, -90) # ROtaciona a imagem em graus
                     
+                if letra == "W" and coluna == 0:
+                    sprite = pygame.transform.rotate(sprite, 90) 
+                    
+                if letra == "W" and linha == 13:
+                    sprite = pygame.transform.rotate(sprite, 180)
+                    
+                if letra == "W" and coluna == 20:
+                    sprite = pygame.transform.rotate(sprite, -90) 
+                    
                 if letra == "R":
                     sprite = pygame.transform.scale(self.tiles["R"], (TILE_SIZE, TILE_SIZE * 2))
                     tela.blit(sprite,(coluna * TILE_SIZE, linha * TILE_SIZE - TILE_SIZE))
-                    continue
+                
+                
+                    
+                    
 
                 tela.blit(sprite,(coluna * TILE_SIZE, linha * TILE_SIZE))
 

@@ -1,5 +1,6 @@
 import os
 import pygame
+from player import Personagem
 from constantes import *
 from caminhos import *
 class Pedido:
@@ -47,22 +48,33 @@ class ReceitaTV:
 
         self.sprite = pygame.transform.scale(self.sprite,(self.largura, self.altura))
         
-    def desenhar(self, tela, pedido):
+    def desenhar(self, tela, pedido, jogador1: Personagem, jogador2: Personagem):
         self.x = tela.get_width() - self.largura - 20
         self.y = 0
+        
+        tv_rect = pygame.Rect(self.x, self.y, self.largura, self.altura)
+        
+        painel = pygame.Surface((self.largura, self.altura), pygame.SRCALPHA)
+        
+        if jogador1.rect.colliderect(tv_rect) or jogador2.rect.colliderect(tv_rect):
+            painel.set_alpha(155)
+        else:
+            painel.set_alpha(255)
 
-        tela.blit(self.sprite, (self.x, self.y))
+        painel.blit(self.sprite, (0, 0))
         titulo = self.fonte_titulo.render("PEDIDO", True, BRANCO)
 
-        tela.blit(titulo, (self.x + 15, self.y + 12))
-        imagem_pedido = pygame.transform.scale( pedido.sprite, (40, 40))
+        painel.blit(titulo, (15, 12))
+        imagem_pedido = pygame.transform.scale(pedido.sprite, (40, 40))
 
-        tela.blit(imagem_pedido, (self.x + 12, self.y + 48))
+        painel.blit(imagem_pedido, (12, 48))
 
         for indice, ingrediente in enumerate(pedido.ingredientes):
             texto = self.fonte_ingredientes.render(ingrediente.upper(), True, BRANCO)
 
-            tela.blit(texto, (self.x + 58, self.y + 48 + indice * 17))
+            painel.blit(texto, (58, 48 + indice * 17))
+            
+        tela.blit(painel, (self.x, self.y))
             
                 
                 

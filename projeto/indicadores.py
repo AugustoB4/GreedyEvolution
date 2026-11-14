@@ -1,18 +1,44 @@
 from caminhos import PINS_DIR
+from constantes import MARGEM, TAMANHO, ESPESSURA, CIANO
 import pygame
 import os
 
 class Indicador:
-    def __init__(self, player, nome):
-        self.player = player
+    def __init__(self, alvo, nome):
+        self.alvo = alvo
         self.nome = nome 
         
         self.sprite = pygame.image.load(os.path.join(PINS_DIR, self.nome)).convert_alpha()
         
+    def desenhar_marcadores(self, tela):
+        alvo = self.alvo.rect
+
+        x = alvo.left - MARGEM
+        y = alvo.top - MARGEM
+
+        largura = alvo.width + MARGEM * 2
+        altura = alvo.height + MARGEM * 2
         
+        pygame.draw.circle(tela, (255, 255, 0), alvo.center, 2)
+    
+        pygame.draw.line(tela, CIANO, (x, y), (x + TAMANHO, y), ESPESSURA)
+        pygame.draw.line(tela, CIANO, (x, y), (x, y + TAMANHO), ESPESSURA)
+
+        pygame.draw.line(tela, CIANO, (x + largura - TAMANHO, y), (x + largura, y), ESPESSURA)
+        pygame.draw.line(tela, CIANO, (x + largura, y), (x + largura, y + TAMANHO), ESPESSURA)
+
+        pygame.draw.line(tela, CIANO, (x, y + altura - TAMANHO), (x, y + altura), ESPESSURA)
+        pygame.draw.line(tela, CIANO, (x, y + altura), (x + TAMANHO, y + altura), ESPESSURA)
+
+        pygame.draw.line(tela, CIANO, (x + largura - TAMANHO, y + altura), (x + largura, y + altura), ESPESSURA)
+        pygame.draw.line(tela, CIANO, (x + largura, y + altura - TAMANHO), (x + largura, y + altura), ESPESSURA)
+         
     def desenhar(self, tela):
-        self.posicaox = self.player.rect.centerx + 15
-        self.posicaoy = self.player.rect.top - 75
+        self.desenhar_marcadores(tela)
+        
+        self.posicaox = self.alvo.rect.centerx - self.sprite.get_width() // 2
+        self.posicaoy = self.alvo.rect.top - 35 
+        
         tela.blit(self.sprite, (self.posicaox, self.posicaoy))
         
 class IndPegar(Indicador):
