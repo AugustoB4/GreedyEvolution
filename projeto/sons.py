@@ -8,6 +8,7 @@ from caminhos import SOUNDS_PG
 from caminhos import SOUNDS_CT
 from caminhos import SOUNDS_AD
 from caminhos import SOUNDS_FN
+from caminhos import SOUNDS_ST
 
 pygame.init()
 class Sons:
@@ -27,7 +28,7 @@ som_botoes = pygame.mixer.Sound(os.path.join(SOUNDS_BT, "Som_botoes.mp3"))
 som_botoes.set_volume(0.5)
 
 som_pegar = pygame.mixer.Sound(os.path.join(SOUNDS_PG, "som_coleta_pegar.mp3"))
-som_pegar.set_volume(0.5)
+som_pegar.set_volume(0.7)
 
 som_corte = pygame.mixer.Sound(os.path.join(SOUNDS_CT, "corte_faca.mp3"))
 som_corte.set_volume(0.5)
@@ -37,6 +38,9 @@ som_andar.set_volume(0.5)
 
 som_forno = pygame.mixer.Sound(os.path.join(SOUNDS_FN, "fritura_fogao.mp3"))
 som_forno.set_volume(0.5)
+
+som_solta = pygame.mixer.Sound(os.path.join(SOUNDS_ST, "som_coleta_soltar.mp3"))
+som_solta.set_volume(0.7)
 
 
 

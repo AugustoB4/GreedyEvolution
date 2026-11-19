@@ -7,7 +7,7 @@ from itens import *
 from constantes import *
 from indicadores import *
 from caminhos import PLAYER_DIR
-from sons import som_pegar, som_corte, som_andar
+from sons import som_pegar, som_corte, som_andar, som_solta
 
 
 # Classe base
@@ -425,10 +425,11 @@ class Personagem:
 
                 if ingrediente in paos:
                     paos.remove(ingrediente)
-
+                
+                som_solta.play()
                 self.objeto = None
-
                 return ingrediente
+              
 
         coluna = area.centerx // TILE_SIZE
         linha = area.centery // TILE_SIZE
@@ -441,6 +442,7 @@ class Personagem:
                         break
                 
                 ingrediente.dono = None
+                som_solta.play()
                 self.objeto = None
                 return
 
@@ -465,6 +467,7 @@ class Personagem:
                         colocado = montagem.adicionar_ingrediente(ingrediente, letra)
 
                     if colocado:
+                        som_solta.play()
                         self.objeto = None
 
                     return
@@ -485,6 +488,7 @@ class Personagem:
         ingrediente.y = centro_y - ingrediente.rect.height // 2
         ingrediente.rect.topleft = (ingrediente.x, ingrediente.y)
 
+        som_solta.play()
         self.objeto = None
 
     def verificar_habilidades(self, evento, armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates, alfaces, queijos,paos, carnes, lixeiras, montagens, entregas):

@@ -21,6 +21,9 @@ BASE_AD = os.path.dirname(
 BASE_FN = os.path.dirname(
     os.path.abspath(__file__)
 )
+BASE_ST = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
 
 
@@ -90,4 +93,7 @@ SOUNDS_AD = os.path.join(
 )
 SOUNDS_FN = os.path.join(
     BASE_FN, "assets", "sounds"
+)
+SOUNDS_ST = os.path.join(
+    BASE_ST, "assets", "sounds"
 )
