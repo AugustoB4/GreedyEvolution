@@ -472,6 +472,18 @@ class Personagem:
 
                     return
 
+        ingredientes = [tomates, paos, carnes, queijos, alfaces]
+        for lista in ingredientes:
+            for ingrediente in lista:
+                if ingrediente is None or ingrediente.dono is not None:
+                    continue
+
+                coluna_ingrediente = ingrediente.rect.centerx // TILE_SIZE
+                linha_ingrediente = ingrediente.rect.centery // TILE_SIZE
+
+                if coluna_ingrediente == coluna and linha_ingrediente == linha:
+                    return
+
         if letra not in ("F", "B", "O"):
             return
 
@@ -494,7 +506,7 @@ class Personagem:
     def verificar_habilidades(self, evento, armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates, alfaces, queijos,paos, carnes, lixeiras, montagens, entregas):
         if evento.type == pygame.KEYDOWN:
             if evento.key == self.teclas["pegar"]:
-                self.pegar(armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates,alfaces, queijos, paos, carnes, montagens)
+                self.pegar(armarios, armarios_queijo, armarios_tomate,armarios_alface, geladeiras, tomates, alfaces, queijos, paos, carnes, montagens)
 
             elif evento.key == self.teclas["largar"]:
                 return self.largar(lixeiras, tomates, alfaces, queijos, paos, carnes, montagens, entregas)

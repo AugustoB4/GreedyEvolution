@@ -182,22 +182,45 @@ class Jogo:
         self.televisao.desenhar(self.tela,self.pedido_atual, self.player1, self.player2)
         pygame.display.flip()
 
+    def reiniciar(self):
+        self.__init__()
+
     def iniciar(self):
-        menu = Menu(self.tela, self.largura, self.altura)
-        if not menu.executar():
+        menu = Menu(self.tela, self.largura, self.altura, "inicio")
+        acao = menu.executar()
+
+        if acao != "start":
             self.rodando = False
-        else:
-            som_inicial.stop()
-            som_face.play(-1)
-           
-        while self.rodando == True:
+            pygame.quit()
+            return
+
+        som_inicial.stop()
+        som_face.play(-1)
+
+        while self.rodando:
             dt = self.clock.tick(60) / 1000
-            
             self.fase.atualizar(dt)
-            
+
+            if self.fase.tempo <= 0:
+                som_face.stop()
+                menu = Menu(self.tela, self.largura, self.altura, "gameover")
+
+                acao = menu.executar()
+
+                if acao == "retry":
+                    self.reiniciar()
+
+                    som_face.play(-1)
+                    continue
+                    
+                elif acao == "quit":
+                    self.rodando = False
+                    break
+
             for montagem in self.montagens:
                 montagem.atualizar(dt)
-        
+
             self.verificarEventos()
             self.desenhar()
+
         pygame.quit()
