@@ -64,6 +64,14 @@ UI_DIR = os.path.join(
     SPRITES_DIR, "ui"
 )
 
+FASES_DIR = os.path.join(
+    SPRITES_DIR, "fases"
+)
+
+TUTORIALS_DIR = os.path.join(
+    SPRITES_DIR, "tutorials"
+)
+
 FONTS_DIR = os.path.join(
     ASSETS_DIR, "fonts"
 )
@@ -97,3 +105,14 @@ SOUNDS_FN = os.path.join(
 SOUNDS_ST = os.path.join(
     BASE_ST, "assets", "sounds"
 )
+
+def tiles_dir_estilo(estilo="classico"):
+    if estilo == "classico":
+        return TILES_DIR
+    return os.path.join(TILES_DIR, estilo)
+
+
+def pins_dir_estilo(estilo="classico"):
+    if estilo == "classico":
+        return PINS_DIR
+    return os.path.join(PINS_DIR, estilo)

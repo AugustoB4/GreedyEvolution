@@ -1,14 +1,16 @@
-from caminhos import PINS_DIR
+from caminhos import PINS_DIR, pins_dir_estilo
 from constantes import MARGEM, TAMANHO, ESPESSURA, CIANO
 import pygame
 import os
 
 class Indicador:
-    def __init__(self, alvo, nome):
+    def __init__(self, alvo, nome, estilo="classico"):
         self.alvo = alvo
         self.nome = nome 
-        
-        self.sprite = pygame.image.load(os.path.join(PINS_DIR, self.nome)).convert_alpha()
+        self.estilo = estilo
+        caminho = os.path.join(pins_dir_estilo(estilo),self.nome)
+
+        self.sprite = pygame.image.load(caminho).convert_alpha()
         
     def desenhar_marcadores(self, tela):
         alvo = self.alvo.rect
@@ -42,40 +44,40 @@ class Indicador:
         tela.blit(self.sprite, (self.posicaox, self.posicaoy))
         
 class IndPegar(Indicador):
-    def __init__(self, player):
-        super().__init__(player, "GrabPin.png")
+    def __init__(self, player, estilo="classico"):
+        super().__init__(player, "GrabPin.png", estilo)
         
 class IndSoltar(Indicador):
-    def __init__(self, player):
-        super().__init__(player, "ArrowPin.png")
+    def __init__(self, player, estilo="classico"):
+        super().__init__(player, "ArrowPin.png", estilo)
         
 class IndPegarPao(Indicador):
-    def __init__(self, player):
-        super().__init__(player, "BreadPin.png")
+    def __init__(self, player, estilo="classico"):
+        super().__init__(player, "BreadPin.png", estilo)
         
         
 class IndPegarQueijo(Indicador):
-    def __init__(self, player):
-        super().__init__(player, "CheesePin.png")
+    def __init__(self, player,estilo="classico"):
+        super().__init__(player, "CheesePin.png", estilo)
         
         
 class IndPegarTomate(Indicador):
-    def __init__(self, player):
-        super().__init__(player, "TomatoPin.png")
+    def __init__(self, player, estilo="classico"):
+        super().__init__(player, "TomatoPin.png", estilo)
         
         
 class IndPegarAlface(Indicador):
-    def __init__(self, player):
-        super().__init__(player, "LettucePin.png")
+    def __init__(self, player, estilo="classico"):
+        super().__init__(player, "LettucePin.png", estilo)
         
         
 class IndPegarCarne(Indicador):
-    def __init__(self, player):
-        super().__init__(player, "MeatPin.png")
+    def __init__(self, player, estilo="classico"):
+        super().__init__(player, "MeatPin.png", estilo)
         
         
 class IndJogarLixo(Indicador):
-    def __init__(self, player):
-        super().__init__(player, "TrashPin.png")
+    def __init__(self, player, estilo="classico"):
+        super().__init__(player, "TrashPin.png", estilo)
         
     

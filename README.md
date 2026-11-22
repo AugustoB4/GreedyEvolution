@@ -100,17 +100,21 @@ Enquanto atravessam galáxias, eles precisam preparar pedidos para **clientes ex
 
 ## 🎮 Controles
 
-### Player 1
+### Player 1 — Romerio
 
-* Movimento: PgUp / PgDn / Home / End
-* Pegar: Shift direito
-* Ação: Ctrl direito
+* Movimento: Setas direcionais (↑ ↓ ← →)
+* Pegar: `KP1`
+* Largar: `KP2`
+* Cortar: `KP3`
 
-### Player 2
+`KP1`, `KP2` e `KP3` correspondem às teclas 1, 2 e 3 do teclado numérico.
 
-* Movimento: W A S D
-* Pegar: Shift esquerdo
-* Ação: Ctrl esquerdo
+### Player 2 — Brito
+
+* Movimento: `W` `A` `S` `D`
+* Pegar: `Z`
+* Largar: `X`
+* Cortar: `C`
 
 ---
 
@@ -210,6 +214,7 @@ cd greedy-evolution
 pip install pygame
 
 # Execute o jogo
+cd projeto
 python main.py
 ```
 

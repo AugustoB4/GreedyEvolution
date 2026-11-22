@@ -3,20 +3,54 @@ import pygame
 import random
 
 from constantes import *
+from campanha import (
+    ENTREGAS_PARA_CONCLUIR,
+    FASES_CAMPANHA,
+    ProgressoCampanha,
+    TEMPO_INICIAL_FASE,
+    TEMPO_MAXIMO_FASE,
+    TOTAL_FASES,
+    calcular_estrelas,
+)
 from fase import Fase
 from pedido import *
 from menu import Menu
-from player import Romerio, Brito, tomates, queijos, paos, carnes, alfaces
+from player import Romerio, Brito
 from itens import *
-from mapa import Mapa
+from mapa import Mapa, VARIANTES_COZINHA, sortear_variante
 from pedido import ReceitaTV
+from interface_campanha import InterfaceCampanha
 
 from sons import som_inicial, som_face
 from caminhos import BACKGROUND_DIR
 
 class Jogo:
-    def __init__(self):
+    def __init__(
+        self,
+        campanha=False,
+        indice_fase=0,
+        progresso=None,
+        caminho_progresso=None,
+    ):
         pygame.init()
+
+        self.campanha_ativa = campanha
+        self.caminho_progresso = caminho_progresso
+        self.progresso_campanha = None
+        self.indice_fase_campanha = None
+        self.definicao_fase = None
+        self.resultado_fase = None
+
+        if campanha:
+            if not 0 <= indice_fase < TOTAL_FASES:
+                raise ValueError("Índice de fase fora da campanha disponível")
+            self.indice_fase_campanha = indice_fase
+            self.definicao_fase = FASES_CAMPANHA[indice_fase]
+            self.progresso_campanha = (
+                progresso
+                if progresso is not None
+                else ProgressoCampanha(caminho_progresso)
+            )
 
         self.largura = int(LARGURA)
         self.altura = int(ALTURA)
@@ -27,24 +61,83 @@ class Jogo:
 
         pygame.display.set_caption("Greedy Evolution")
 
-        som_inicial.play()
+        if campanha:
+            self.nome_variante = self.definicao_fase.variante
+            variante = VARIANTES_COZINHA[self.nome_variante]
+        else:
+            self.nome_variante, variante = sortear_variante()
 
-        self.mapa1 = Mapa()
-        self.mapa1.criar_colisoes()
-        self.fase = Fase()
-        self.televisao = ReceitaTV()
-        self.montagens = self.mapa1.montagens
-        self.pedido_atual = random.choice([PedidoFacil,PedidoMedio,PedidoDificil])()
+        self.estilo = variante["estilo"]
+        self.tipo_pedido = variante["pedido"]
+
+        self.modelo_mapa = random.choice(variante["modelos"])
+        
+        self.mapa = Mapa(
+            modelo=self.modelo_mapa,
+            estilo=self.estilo
+        )
+
+        self.mapa.criar_colisoes()
+
+        self.largura_logica = len(self.mapa.mapa[0]) * TILE_SIZE
+        self.altura_logica = len(self.mapa.mapa) * TILE_SIZE
+        self.superficie_jogo = pygame.Surface(
+            (self.largura_logica, self.altura_logica)
+        )
+        self.superficie_interface = self.superficie_jogo.subsurface(
+            (0, 0, self.largura, self.altura)
+        )
+
+        self.escala_jogo = min(
+            self.largura / self.largura_logica,
+            self.altura / self.altura_logica,
+        )
+        self.tamanho_renderizado = (
+            round(self.largura_logica * self.escala_jogo),
+            round(self.altura_logica * self.escala_jogo),
+        )
+        self.posicao_renderizada = (
+            (self.largura - self.tamanho_renderizado[0]) // 2,
+            (self.altura - self.tamanho_renderizado[1]) // 2,
+        )
+        self.fase = Fase(
+            tempo=TEMPO_INICIAL_FASE if campanha else TEMPOINICIAL,
+            definicao=self.definicao_fase,
+            limite_tempo=TEMPO_MAXIMO_FASE if campanha else None,
+        )
+        self.televisao = ReceitaTV(self.estilo)
+        self.montagens = self.mapa.montagens
+        self.ingredientes_tematicos = {
+            dispensador.nome_ingrediente: []
+            for dispensador in self.mapa.dispensadores_tematicos
+        }
+        # Cada partida mantém suas próprias listas; os nomes globais antigos de
+        # player.py continuam disponíveis para compatibilidade com consumidores.
+        self.tomates = []
+        self.queijos = []
+        self.paos = []
+        self.carnes = []
+        self.alfaces = []
+        self.produtos = []
+        if campanha:
+            self.pedido_atual = criar_pedido_ponderado(
+                self.tipo_pedido,
+                self.definicao_fase.dificuldade,
+            )
+        else:
+            self.pedido_atual = random.choice(
+                pedidos_da_variante(self.tipo_pedido)
+            )()
         for montagem in self.montagens:
             montagem.pedido = self.pedido_atual
         
-        self.armarios = self.mapa1.armarios
-        self.armarios_queijo = self.mapa1.armarios_queijo
-        self.armarios_tomate = self.mapa1.armarios_tomate
-        self.armarios_alface = self.mapa1.armarios_alface
-        self.geladeiras = self.mapa1.geladeiras
-        self.lixeiras = self.mapa1.lixos
-        self.entregas = self.mapa1.entregas
+        self.armarios = self.mapa.armarios
+        self.armarios_queijo = self.mapa.armarios_queijo
+        self.armarios_tomate = self.mapa.armarios_tomate
+        self.armarios_alface = self.mapa.armarios_alface
+        self.geladeiras = self.mapa.geladeiras
+        self.lixeiras = self.mapa.lixos
+        self.entregas = self.mapa.entregas
 
         self.background = pygame.image.load(
             os.path.join(
@@ -57,44 +150,102 @@ class Jogo:
             self.background,
             (self.largura, self.altura)
         )
-        self.tomates = tomates
-        self.queijos = queijos
-        self.paos = paos
-        self.carnes = carnes
-        self.alfaces = alfaces
-
-        self.player1 = Romerio(750, 200)
-        self.player2 = Brito(250, 200)
+        self.player1 = Romerio(624, 192, self.estilo)
+        self.player2 = Brito(240, 240, self.estilo)
 
         self.rodando = True
         self.clock = pygame.time.Clock()
         
-    def processar_entrega(self, hamburguer):
-        tomate_esperado = "Tomate" in self.pedido_atual.ingredientes
-        alface_esperada = "Alface" in self.pedido_atual.ingredientes
+    def processar_entrega(self, produto):
+        modo_campanha = getattr(self, "campanha_ativa", False)
+        if modo_campanha:
+            if self.fase.encerrada:
+                return False
+            if self.fase.tempo <= 0:
+                self.fase.encerrar("derrota")
+                self.resultado_fase = {"resultado": "derrota", "estrelas": 0}
+                return False
 
-        pedido_correto = (hamburguer.com_tomate == tomate_esperado and hamburguer.com_alface == alface_esperada
+        pedido = self.pedido_atual
+        pedido_correto = (
+            isinstance(produto, ProdutoFinal)
+            and isinstance(produto, pedido.produto_classe)
+            and produto.familia == pedido.familia
+            and produto.receita_id == pedido.receita_id
         )
 
-        if pedido_correto: 
-            self.fase.aumentar_tempo_pontuacao(self.pedido_atual.tempo, self.pedido_atual.pontuacao)
+        if modo_campanha and pedido_correto:
+            self.fase.registrar_acerto(
+                pedido.tempo,
+                pedido.pontuacao,
+            )
+            if self.fase.entregas_corretas >= ENTREGAS_PARA_CONCLUIR:
+                estrelas = calcular_estrelas(
+                    self.definicao_fase.dificuldade,
+                    self.fase.pontuacao,
+                    self.fase.tempo,
+                )
+                self.fase.encerrar("vitoria", estrelas)
+                melhor = self.progresso_campanha.registrar_resultado(
+                    self.definicao_fase.numero,
+                    estrelas,
+                )
+                self.resultado_fase = {
+                    "resultado": "vitoria",
+                    "estrelas": estrelas,
+                    "melhor_classificacao": melhor,
+                    "pontuacao": self.fase.pontuacao,
+                    "tempo": self.fase.tempo,
+                    "persistido": getattr(
+                        self.progresso_campanha, "erro_salvamento", None
+                    ) is None,
+                }
+            else:
+                self.gerar_pedido()
+        elif pedido_correto:
+            self.fase.aumentar_tempo_pontuacao(
+                pedido.tempo,
+                pedido.pontuacao,
+            )
         else:
-            self.fase.diminuir_tempo_pontuacao(self.pedido_atual.tempo, self.pedido_atual.pontuacao)
+            self.fase.diminuir_tempo_pontuacao(
+                pedido.tempo,
+                pedido.pontuacao,
+            )
 
-        self.gerar_pedido()
+        if not modo_campanha or not pedido_correto:
+            self.gerar_pedido()
+        return pedido_correto
         
     def gerar_pedido(self):
-        self.pedido_atual = random.choice([
-            PedidoFacil,
-            PedidoMedio,
-            PedidoDificil
-        ])()
+        if getattr(self, "campanha_ativa", False):
+            if self.fase.encerrada:
+                return self.pedido_atual
+            self.pedido_atual = criar_pedido_ponderado(
+                self.tipo_pedido,
+                self.definicao_fase.dificuldade,
+            )
+            for montagem in self.montagens:
+                montagem.pedido = self.pedido_atual
+            return self.pedido_atual
+
+        variante = getattr(self, "tipo_pedido", "hamburguer")
+        self.pedido_atual = random.choice(
+            pedidos_da_variante(variante)
+        )()
 
         for montagem in self.montagens:
             montagem.pedido = self.pedido_atual
 
-    def verificarEventos(self):
-        for evento in pygame.event.get():
+    def verificarEventos(self, dt=1 / 60):
+        eventos = pygame.event.get()
+        teclas_pressionadas = pygame.key.get_pressed()
+        self.player1.atualizar_direcao(teclas_pressionadas)
+        self.player2.atualizar_direcao(teclas_pressionadas)
+
+        for evento in eventos:
+            if getattr(self, "campanha_ativa", False) and self.fase.encerrada:
+                break
             if evento.type == pygame.QUIT:
                 self.rodando = False
 
@@ -103,14 +254,19 @@ class Jogo:
             self.armarios_tomate, self.armarios_alface,
             self.geladeiras, self.tomates, self.alfaces,
             self.queijos, self.paos, self.carnes,
-            self.lixeiras, self.montagens, self.entregas)
+            self.lixeiras, self.montagens, self.entregas, self.mapa.mapa,
+            self.mapa.dispensadores_tematicos,
+            self.ingredientes_tematicos, self.produtos,
+            )
 
             hamburguer2 = self.player2.verificar_habilidades(
                 evento, self.armarios, self.armarios_queijo,
                 self.armarios_tomate, self.armarios_alface,
                 self.geladeiras, self.tomates, self.alfaces,
                 self.queijos, self.paos, self.carnes,
-                self.lixeiras, self.montagens, self.entregas
+                self.lixeiras, self.montagens, self.entregas, self.mapa.mapa,
+                self.mapa.dispensadores_tematicos,
+                self.ingredientes_tematicos, self.produtos,
             )
 
             if hamburguer1 is not None:
@@ -119,21 +275,52 @@ class Jogo:
             if hamburguer2 is not None:
                 self.processar_entrega(hamburguer2)
 
+            if getattr(self, "campanha_ativa", False) and self.fase.encerrada:
+                break
+
             self.player1.verificar_cortagem(
-                evento, self.mapa1.tabuas, self.tomates,
-                self.alfaces, self.queijos, self.paos, self.carnes
+                evento, self.mapa.tabuas, self.tomates,
+                self.alfaces, self.queijos, self.paos, self.carnes,
+                self.ingredientes_tematicos,
             )
 
             self.player2.verificar_cortagem(
-                evento, self.mapa1.tabuas, self.tomates,
-                self.alfaces, self.queijos, self.paos, self.carnes
+                evento, self.mapa.tabuas, self.tomates,
+                self.alfaces, self.queijos, self.paos, self.carnes,
+                self.ingredientes_tematicos,
             )
 
-        self.player1.mover(self.mapa1.colisoes)
-        self.player2.mover(self.mapa1.colisoes)
+        if getattr(self, "campanha_ativa", False) and self.fase.encerrada:
+            return
+
+        ingredientes_chao = [
+            *self.tomates, *self.queijos, *self.paos,
+            *self.carnes, *self.alfaces,
+            *(
+                ingrediente
+                for lista in self.ingredientes_tematicos.values()
+                for ingrediente in lista
+            ),
+        ]
+        self.player1.mover(self.mapa.colisoes, ingredientes_chao)
+        self.player2.mover(self.mapa.colisoes, ingredientes_chao)
         
-        self.player1.verificar_indicador(self.lixeiras, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
-        self.player2.verificar_indicador(self.lixeiras, self.armarios, self.armarios_queijo, self.armarios_tomate, self.armarios_alface, self.geladeiras, self.tomates, self.alfaces, self.queijos, self.paos, self.carnes)
+        self.player1.verificar_indicador(
+            self.lixeiras, self.armarios, self.armarios_queijo,
+            self.armarios_tomate, self.armarios_alface, self.geladeiras,
+            self.tomates, self.alfaces, self.queijos, self.paos, self.carnes,
+            self.mapa.dispensadores_tematicos,
+            self.ingredientes_tematicos, self.produtos,
+            self.montagens, self.entregas,
+        )
+        self.player2.verificar_indicador(
+            self.lixeiras, self.armarios, self.armarios_queijo,
+            self.armarios_tomate, self.armarios_alface, self.geladeiras,
+            self.tomates, self.alfaces, self.queijos, self.paos, self.carnes,
+            self.mapa.dispensadores_tematicos,
+            self.ingredientes_tematicos, self.produtos,
+            self.montagens, self.entregas,
+        )
 
         for tomate in self.tomates:
             tomate.atualizar()
@@ -145,52 +332,268 @@ class Jogo:
             pao.atualizar()
         for carne in self.carnes:
             carne.atualizar()
-            carne.assar_ingrediente(self.mapa1.fornos)
+            carne.assar_ingrediente(self.mapa.fornos, dt)
+
+        for lista in self.ingredientes_tematicos.values():
+            for ingrediente in lista:
+                ingrediente.atualizar()
+                ingrediente.preparar_ingrediente(self.mapa.fornos, dt)
+
+        for produto in self.produtos:
+            produto.atualizar()
             
     def desenhar(self):
-        self.tela.fill(PRETO)
-        self.mapa1.desenhar(self.tela)
-        
-        
-        self.mapa1.desenhar_preparo(self.tela, self.carnes)
-        
+        self.superficie_jogo.fill(PRETO)
+        self.mapa.desenhar(self.superficie_jogo)
+        ingredientes_tematicos = getattr(self, "ingredientes_tematicos", {})
+        itens_em_preparo = list(self.carnes)
+        for lista in ingredientes_tematicos.values():
+            itens_em_preparo.extend(lista)
+        self.mapa.desenhar_preparo(self.superficie_jogo, itens_em_preparo)
+
         for tomate in self.tomates:
-            tomate.desenhar(self.tela)
-            
+            tomate.desenhar(self.superficie_jogo)
+
         for queijo in self.queijos:
-            queijo.desenhar(self.tela)
-            
+            queijo.desenhar(self.superficie_jogo)
+
         for alface in self.alfaces:
-            alface.desenhar(self.tela)
-            
+            alface.desenhar(self.superficie_jogo)
+
         for pao in self.paos:
-            pao.desenhar(self.tela)
-            
+            pao.desenhar(self.superficie_jogo)
+
         for carne in self.carnes:
-            carne.desenhar(self.tela)
+            carne.desenhar(self.superficie_jogo)
 
         for montagem in self.montagens:
-            montagem.desenhar(self.tela)
-        
-        self.player1.desenhar_indicador(self.tela)
-        self.player2.desenhar_indicador(self.tela)
-        
-        self.player1.desenhar(self.tela)
-        self.player2.desenhar(self.tela)
-        
-        self.fase.desenhar(self.tela)
-        self.televisao.desenhar(self.tela,self.pedido_atual, self.player1, self.player2)
-        pygame.display.flip()
+            montagem.desenhar(self.superficie_jogo)
 
+        for lista in ingredientes_tematicos.values():
+            for ingrediente in lista:
+                ingrediente.desenhar(self.superficie_jogo)
+
+        for produto in getattr(self, "produtos", ()):
+            produto.desenhar(self.superficie_jogo)
+
+        self.player1.desenhar_indicador(self.superficie_jogo)
+        self.player2.desenhar_indicador(self.superficie_jogo)
+
+        self.player1.desenhar(self.superficie_jogo)
+        self.player2.desenhar(self.superficie_jogo)
+
+        self.fase.desenhar(self.superficie_interface)
+        self.televisao.desenhar(
+            self.superficie_interface,
+            self.pedido_atual,
+            self.player1,
+            self.player2,
+        )
+
+        superficie_redimensionada = pygame.transform.scale(
+            self.superficie_jogo,
+            self.tamanho_renderizado,
+        )
+        self.tela.fill(PRETO)
+        self.tela.blit(superficie_redimensionada, self.posicao_renderizada)
+        pygame.display.flip()
     def reiniciar(self):
-        self.__init__()
+        som_inicial.stop()
+        som_face.stop()
+        self.player1.parar_som_andar()
+        self.player2.parar_som_andar()
+
+        # Limpa referências mantidas por consumidores externos antes de trocar
+        # pelas listas isoladas da nova partida.
+        for lista in (self.tomates, self.queijos, self.paos, self.carnes, self.alfaces):
+            lista.clear()
+
+        if self.campanha_ativa:
+            self.__init__(
+                campanha=True,
+                indice_fase=self.indice_fase_campanha,
+                progresso=self.progresso_campanha,
+                caminho_progresso=self.caminho_progresso,
+            )
+        else:
+            self.__init__()
+
+    def _carregar_fase_campanha(self, indice_fase):
+        if hasattr(self, "player1"):
+            self.player1.parar_som_andar()
+            self.player2.parar_som_andar()
+        som_face.stop()
+        som_inicial.stop()
+        for lista in (self.tomates, self.queijos, self.paos, self.carnes, self.alfaces):
+            lista.clear()
+        self.__init__(
+            campanha=True,
+            indice_fase=indice_fase,
+            progresso=self.progresso_campanha,
+            caminho_progresso=self.caminho_progresso,
+        )
+
+    def _tutorial_se_necessario(self, interface, indice_fase):
+        definicao = FASES_CAMPANHA[indice_fase]
+        if (
+            definicao.fase_na_galaxia != 1
+            or self.progresso_campanha.tutorial_exibido(definicao.galaxia)
+        ):
+            return "iniciar"
+
+        # O tutorial conta como exibido quando a tela é aberta e fica salvo
+        # antes da interação, portanto fechar o jogo não o faz reaparecer.
+        self.progresso_campanha.marcar_tutorial_exibido(definicao.galaxia)
+        return interface.executar_tutorial(definicao.galaxia)
+
+    def _executar_fase_campanha(self):
+        while self.rodando and not self.fase.encerrada:
+            dt = self.clock.tick(60) / 1000
+            self.fase.atualizar(dt)
+
+            if self.fase.tempo <= 0:
+                self.fase.encerrar("derrota")
+                self.resultado_fase = {
+                    "resultado": "derrota",
+                    "estrelas": 0,
+                    "melhor_classificacao": self.progresso_campanha.melhor_classificacao(
+                        self.definicao_fase.numero
+                    ),
+                    "pontuacao": self.fase.pontuacao,
+                    "tempo": 0,
+                }
+                break
+
+            for montagem in self.montagens:
+                montagem.atualizar(dt)
+
+            self.verificarEventos(dt)
+            if self.rodando and not self.fase.encerrada:
+                self.desenhar()
+
+        if not self.rodando:
+            return "sair"
+        return self.fase.resultado
+
+    def _iniciar_campanha(self):
+        som_inicial.play()
+        acao = Menu(self.tela, self.largura, self.altura, "inicio").executar()
+        if acao != "start":
+            self.rodando = False
+            som_inicial.stop()
+            som_face.stop()
+            pygame.quit()
+            return
+        som_inicial.stop()
+
+        while self.rodando:
+            interface = InterfaceCampanha(self.tela, self.largura, self.altura)
+            som_inicial.play(-1)
+            acao, indice_fase = interface.executar_selecao(self.progresso_campanha)
+            som_inicial.stop()
+
+            if acao == "sair":
+                self.rodando = False
+                break
+            if acao == "menu":
+                som_inicial.play()
+                acao_menu = Menu(
+                    self.tela, self.largura, self.altura, "inicio"
+                ).executar()
+                som_inicial.stop()
+                if acao_menu != "start":
+                    self.rodando = False
+                continue
+            if acao != "fase" or indice_fase is None:
+                continue
+
+            indice_atual = indice_fase
+            while self.rodando:
+                interface = InterfaceCampanha(self.tela, self.largura, self.altura)
+                som_inicial.play(-1)
+                acao_tutorial = self._tutorial_se_necessario(
+                    interface,
+                    indice_atual,
+                )
+                som_inicial.stop()
+                if acao_tutorial == "sair":
+                    self.rodando = False
+                    break
+                if acao_tutorial == "campanha":
+                    break
+
+                self._carregar_fase_campanha(indice_atual)
+                som_face.play(-1)
+                resultado = self._executar_fase_campanha()
+                som_face.stop()
+                self.player1.parar_som_andar()
+                self.player2.parar_som_andar()
+
+                if resultado == "sair":
+                    self.rodando = False
+                    break
+
+                interface = InterfaceCampanha(self.tela, self.largura, self.altura)
+                melhor = self.progresso_campanha.melhor_classificacao(
+                    self.definicao_fase.numero
+                )
+                proxima_desbloqueada = (
+                    self.indice_fase_campanha + 1 < TOTAL_FASES
+                    and self.progresso_campanha.fase_desbloqueada(
+                        self.definicao_fase.numero + 1
+                    )
+                )
+                campanha_concluida = self.progresso_campanha.dados[
+                    "campanha_concluida"
+                ]
+
+                som_inicial.play(-1)
+                acao_resultado = interface.executar_resultado(
+                    self.definicao_fase,
+                    self.fase.pontuacao,
+                    self.fase.tempo,
+                    self.fase.estrelas,
+                    melhor,
+                    resultado == "vitoria",
+                    proxima_desbloqueada,
+                    campanha_concluida,
+                    erro_salvamento=getattr(
+                        self.progresso_campanha, "erro_salvamento", None
+                    ),
+                )
+                som_inicial.stop()
+
+                if acao_resultado == "sair":
+                    self.rodando = False
+                    break
+                if acao_resultado == "repetir":
+                    continue
+                if acao_resultado == "avancar" and proxima_desbloqueada:
+                    indice_atual += 1
+                    continue
+                break
+
+        som_inicial.stop()
+        som_face.stop()
+        if hasattr(self, "player1"):
+            self.player1.parar_som_andar()
+            self.player2.parar_som_andar()
+        pygame.quit()
 
     def iniciar(self):
+        if self.campanha_ativa:
+            return self._iniciar_campanha()
+
+        som_inicial.play()
         menu = Menu(self.tela, self.largura, self.altura, "inicio")
         acao = menu.executar()
 
         if acao != "start":
             self.rodando = False
+            som_inicial.stop()
+            som_face.stop()
+            self.player1.parar_som_andar()
+            self.player2.parar_som_andar()
             pygame.quit()
             return
 
@@ -203,6 +606,9 @@ class Jogo:
 
             if self.fase.tempo <= 0:
                 som_face.stop()
+                som_inicial.stop()
+                self.player1.parar_som_andar()
+                self.player2.parar_som_andar()
                 menu = Menu(self.tela, self.largura, self.altura, "gameover")
 
                 acao = menu.executar()
@@ -220,7 +626,11 @@ class Jogo:
             for montagem in self.montagens:
                 montagem.atualizar(dt)
 
-            self.verificarEventos()
+            self.verificarEventos(dt)
             self.desenhar()
 
+        som_inicial.stop()
+        som_face.stop()
+        self.player1.parar_som_andar()
+        self.player2.parar_som_andar()
         pygame.quit()

@@ -3,7 +3,7 @@ import os
 import pygame
 from constantes import TILE_SIZE
 from caminhos import ORDERS_DIR
-from itens import Hamburguer
+from itens import Hamburguer, ProdutoFinal
 import math
 
 
@@ -16,13 +16,13 @@ class Montagem:
         self.tempo_animacao = 0
         self.duracao_animacao = 0.4
 
-        self.pedido = pedido
         self.ingredientes = []
 
         self.hamburguer = None
         self.hamburguer_pronto = False
         self.hamburguer_com_tomate = False
         self.hamburguer_com_alface = False
+        self._pedido = None
         
         self.sprites_hamburguer = {}
         for receita, nome_sprite in (
@@ -40,18 +40,46 @@ class Montagem:
         self.rect = pygame.Rect(
             x, y, TILE_SIZE, TILE_SIZE
         )
+
+        self.pedido = pedido
+
+    @property
+    def pedido(self):
+        return self._pedido
+
+    @pedido.setter
+    def pedido(self, valor):
+        self._pedido = valor
+        if hasattr(self, "ingredientes"):
+            self._verificar_hamburguer()
+
+    @property
+    def produto(self):
+        return self.hamburguer
+
+    @produto.setter
+    def produto(self, valor):
+        self.hamburguer = valor
+
+    @property
+    def produto_pronto(self):
+        return self.hamburguer_pronto
+
+    @produto_pronto.setter
+    def produto_pronto(self, valor):
+        self.hamburguer_pronto = valor
         
     def ponto_apoio(self, letra):
         x = self.rect.centerx
         y = self.rect.centery
 
-        if letra in ("2", "3", "4"):
+        if letra in ("2", "3", "4", "D", "Q", "A", "C"):
             y -= 18
 
         return x, y
 
     def adicionar_ingrediente(self, ingrediente, letra):
-        if ingrediente.nome == "Hamburguer" or self.hamburguer is not None:
+        if isinstance(ingrediente, ProdutoFinal) or self.hamburguer is not None:
             return False
 
         if ingrediente in self.ingredientes:
@@ -79,23 +107,36 @@ class Montagem:
         return True
 
     def colocar_hamburguer(self, hamburguer, letra):
+        return self.colocar_produto(hamburguer, letra)
+
+    def colocar_produto(self, produto, letra):
         if self.hamburguer is not None or self.ingredientes:
             return False
 
-        hamburguer.dono = None
-        hamburguer.em_montagem = True
+        if not isinstance(produto, ProdutoFinal):
+            return False
+
+        produto.dono = None
+        produto.em_montagem = True
         centro_x, centro_y = self.ponto_apoio(letra)
-        hamburguer.x = self.rect.centerx - hamburguer.rect.width // 2
-        hamburguer.y = self.rect.centery - hamburguer.rect.height // 2
-        hamburguer.rect.topleft = (hamburguer.x, hamburguer.y)
-        self.hamburguer = hamburguer
+        produto.x = centro_x - produto.rect.width // 2
+        produto.y = centro_y - produto.rect.height // 2
+        produto.rect.topleft = (produto.x, produto.y)
+        self.hamburguer = produto
+        self.hamburguer_pronto = False
+        self.animando = False
+        self.tempo_animacao = 0
         return True
 
     def _verificar_hamburguer(self):
         estava_pronto = self.hamburguer_pronto
 
-        if self.pedido is None:
+        if self.pedido is None or self.hamburguer is not None:
             self.hamburguer_pronto = False
+            self.hamburguer_com_tomate = False
+            self.hamburguer_com_alface = False
+            self.animando = False
+            self.tempo_animacao = 0
             return
 
         nomes = {
@@ -106,9 +147,13 @@ class Montagem:
             "Alface": "Lettuce"
         }
 
-        ingredientes_esperados = [
-            nomes[nome] for nome in self.pedido.ingredientes
-        ]
+        ingredientes_esperados = getattr(
+            self.pedido, "ingrediente_ids", None
+        )
+        if ingredientes_esperados is None:
+            ingredientes_esperados = [
+                nomes[nome] for nome in self.pedido.ingredientes
+            ]
 
         ingredientes_colocados = [
             ingrediente.nome for ingrediente in self.ingredientes
@@ -118,12 +163,23 @@ class Montagem:
             ingredientes_colocados == ingredientes_esperados
         )
 
+        preparos = getattr(self.pedido, "preparos", {})
+
+        def ingrediente_preparado(ingrediente):
+            requisito = preparos.get(ingrediente.nome)
+            if requisito is None:
+                requisito = "assado" if ingrediente.nome == "Meat" else "cortado"
+
+            if requisito == "assado":
+                return ingrediente.assado and not ingrediente.queimado
+            if requisito == "cozido":
+                return ingrediente.cozido
+            if requisito == "cortado":
+                return ingrediente.cortado
+            return False
+
         preparo_correto = all(
-            (
-                ingrediente.assado and not ingrediente.queimado
-                if ingrediente.nome == "Meat"
-                else ingrediente.cortado
-            )
+            ingrediente_preparado(ingrediente)
             for ingrediente in self.ingredientes
         )
 
@@ -141,7 +197,10 @@ class Montagem:
             ordem_correta and preparo_correto
         )
 
-        if not estava_pronto and self.hamburguer_pronto:
+        if not self.hamburguer_pronto:
+            self.animando = False
+            self.tempo_animacao = 0
+        elif not estava_pronto:
             self.animando = True
             self.tempo_animacao = 0
     
@@ -152,13 +211,23 @@ class Montagem:
             hamburguer.em_montagem = False
             return hamburguer
 
+        if self.pedido is not None:
+            # Revalidar aqui protege também contra mudanças de estado do ingrediente
+            # feitas fora dos caminhos normais de adicionar ou retirar.
+            self._verificar_hamburguer()
+
         if self.hamburguer_pronto:
-            hamburguer = Hamburguer(
-                self.rect.x,
-                self.rect.y,
-                self.hamburguer_com_tomate,
-                self.hamburguer_com_alface,
-            )
+            if hasattr(self.pedido, "criar_produto"):
+                hamburguer = self.pedido.criar_produto(
+                    self.rect.x, self.rect.y
+                )
+            else:
+                hamburguer = Hamburguer(
+                    self.rect.x,
+                    self.rect.y,
+                    self.hamburguer_com_tomate,
+                    self.hamburguer_com_alface,
+                )
             self.ingredientes.clear()
             self.hamburguer_pronto = False
             self.hamburguer_com_tomate = False
@@ -189,9 +258,12 @@ class Montagem:
             return
 
         if self.hamburguer_pronto:
-            sprite = self.sprites_hamburguer[
-                (self.hamburguer_com_tomate, self.hamburguer_com_alface)
-            ]
+            if self.pedido is not None and hasattr(self.pedido, "sprite"):
+                sprite = self.pedido.sprite
+            else:
+                sprite = self.sprites_hamburguer[
+                    (self.hamburguer_com_tomate, self.hamburguer_com_alface)
+                ]
 
             escala = 1
 
