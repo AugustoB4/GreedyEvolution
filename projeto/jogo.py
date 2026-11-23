@@ -18,7 +18,7 @@ from player import Romerio, Brito
 from itens import *
 from mapa import Mapa, VARIANTES_COZINHA, sortear_variante
 from pedido import ReceitaTV
-from interface_campanha import InterfaceCampanha
+from interface_campanha import InterfaceCampanha, PAINEIS_TUTORIAL
 
 from sons import som_inicial, som_face
 
@@ -441,16 +441,11 @@ class Jogo:
         definicao = FASES_CAMPANHA[indice_fase]
         if (
             definicao.fase_na_galaxia != 1
-            or self.progresso_campanha.tutorial_exibido(definicao.galaxia)
+            or definicao.galaxia not in PAINEIS_TUTORIAL
         ):
             return "iniciar"
 
-        acao = interface.executar_tutorial(definicao.galaxia)
-        # Só registra a apresentação depois que o jogador confirma o início.
-        # Voltar à campanha ou fechar nessa tela não deve ocultar o tutorial.
-        if acao == "iniciar":
-            self.progresso_campanha.marcar_tutorial_exibido(definicao.galaxia)
-        return acao
+        return interface.executar_tutorial(definicao.galaxia)
 
     def _executar_fase_campanha(self):
         while self.rodando and not self.fase.encerrada:

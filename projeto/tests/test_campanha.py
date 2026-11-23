@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import pygame
 
@@ -553,28 +553,70 @@ class TestEntregaDeCampanha(unittest.TestCase):
 
 
 class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
-    def test_tutorial_so_e_marcado_apos_confirmar_inicio_da_fase(self):
+    def test_tutorial_reaparece_a_cada_inicio_sem_salvar_marcador(self):
         with tempfile.TemporaryDirectory() as diretorio:
-            progresso = ProgressoCampanha(Path(diretorio) / "progresso.json")
+            caminho = Path(diretorio) / "progresso.json"
+            progresso = ProgressoCampanha(caminho)
             jogo = object.__new__(Jogo)
             jogo.progresso_campanha = progresso
-            interface = SimpleNamespace(executar_tutorial=Mock())
+            interface = SimpleNamespace(
+                executar_tutorial=Mock(return_value="iniciar")
+            )
 
-            for acao in ("campanha", "sair"):
-                with self.subTest(acao=acao):
-                    interface.executar_tutorial.return_value = acao
-                    self.assertEqual(
-                        jogo._tutorial_se_necessario(interface, 0), acao
-                    )
-                    self.assertFalse(progresso.tutorial_exibido(1))
+            self.assertEqual(
+                jogo._tutorial_se_necessario(interface, 0), "iniciar"
+            )
+            self.assertEqual(
+                jogo._tutorial_se_necessario(interface, 0), "iniciar"
+            )
+            interface.executar_tutorial.assert_has_calls([call(1), call(1)])
+            self.assertFalse(caminho.exists())
 
-            interface.executar_tutorial.return_value = "iniciar"
-            self.assertEqual(jogo._tutorial_se_necessario(interface, 0), "iniciar")
-            self.assertTrue(progresso.tutorial_exibido(1))
+    def test_tutorial_ignora_marcador_salvo_e_recorde_de_tres_estrelas(self):
+        with tempfile.TemporaryDirectory() as diretorio:
+            caminho = Path(diretorio) / "progresso.json"
+            progresso = ProgressoCampanha(caminho)
+            progresso.registrar_resultado(1, 3)
+            progresso.marcar_tutorial_exibido(1)
+            progresso_antes = caminho.read_bytes()
 
-            chamadas = interface.executar_tutorial.call_count
-            self.assertEqual(jogo._tutorial_se_necessario(interface, 1), "iniciar")
-            self.assertEqual(interface.executar_tutorial.call_count, chamadas)
+            # Reabrir o progresso simula fechar e iniciar o jogo novamente.
+            progresso_carregado = ProgressoCampanha(caminho)
+            jogo = object.__new__(Jogo)
+            jogo.progresso_campanha = progresso_carregado
+            interface = SimpleNamespace(
+                executar_tutorial=Mock(return_value="iniciar")
+            )
+
+            self.assertEqual(
+                jogo._tutorial_se_necessario(interface, 0), "iniciar"
+            )
+            self.assertEqual(
+                jogo._tutorial_se_necessario(interface, 0), "iniciar"
+            )
+            interface.executar_tutorial.assert_has_calls([call(1), call(1)])
+            self.assertEqual(progresso_carregado.melhor_classificacao(1), 3)
+            self.assertTrue(progresso_carregado.tutorial_exibido(1))
+            self.assertEqual(caminho.read_bytes(), progresso_antes)
+
+    def test_tutorial_e_exibido_nas_fases_associadas_e_omitido_nas_demais(self):
+        jogo = object.__new__(Jogo)
+        interface = SimpleNamespace(executar_tutorial=Mock(return_value="iniciar"))
+
+        for indice, galaxia in ((0, 1), (3, 2), (7, 3)):
+            with self.subTest(indice=indice):
+                self.assertEqual(
+                    jogo._tutorial_se_necessario(interface, indice), "iniciar"
+                )
+                interface.executar_tutorial.assert_called_with(galaxia)
+
+        chamadas_antes = interface.executar_tutorial.call_count
+        for indice in (1, 2, 4, 5, 6, 8, 9, 10, 11):
+            with self.subTest(indice=indice):
+                self.assertEqual(
+                    jogo._tutorial_se_necessario(interface, indice), "iniciar"
+                )
+        self.assertEqual(interface.executar_tutorial.call_count, chamadas_antes)
 
     def test_inicializacao_fixa_cozinha_dificuldade_e_pedidos_por_galaxia(self):
         with tempfile.TemporaryDirectory() as diretorio:
@@ -930,7 +972,7 @@ class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
                 jogo._iniciar_campanha()
 
             self.assertEqual(indices_carregados, [0, 0])
-            self.assertEqual(tutoriais, [1])
+            self.assertEqual(tutoriais, [1, 1])
             self.assertEqual(resultados, [(True, 1, True), (False, 0, True)])
             carregado = ProgressoCampanha(jogo.caminho_progresso)
             self.assertEqual(carregado.melhor_classificacao(1), 1)
@@ -950,6 +992,7 @@ class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
             jogo.progresso_campanha.marcar_tutorial_exibido(1)
             indices_carregados = []
             resultado_recebido = []
+            tutoriais = []
 
             class InterfaceSimulada:
                 selecoes = 0
@@ -962,6 +1005,10 @@ class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
                     if type(self).selecoes == 1:
                         return "fase", 0
                     return "sair", None
+
+                def executar_tutorial(self, galaxia):
+                    tutoriais.append(galaxia)
+                    return "iniciar"
 
                 def executar_resultado(
                     self, definicao, pontuacao, tempo, estrelas, melhor,
@@ -1006,6 +1053,7 @@ class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
                 jogo._iniciar_campanha()
 
             self.assertEqual(indices_carregados, [0])
+            self.assertEqual(tutoriais, [1])
             self.assertEqual(len(resultado_recebido), 1)
             self.assertFalse(resultado_recebido[0][0])
             self.assertFalse(resultado_recebido[0][1])
