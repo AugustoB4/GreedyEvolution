@@ -2,6 +2,7 @@
 
 import apoio
 import pygame
+import re
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -18,6 +19,11 @@ from mapa import (
     MODELEX6, MODELEX7, MODELEX8, MODELEX9,
     MODELOS_BASE, MODELOS_MODULARES, Mapa, VARIANTES_COZINHA,
     compor_modelo_modular,
+    gerar_modelos_modulares,
+    problemas_validacao_modelo,
+    normalizar_bancadas,
+    validar_modelo,
+    MODELOS_MAPA,
 )
 
 
@@ -223,6 +229,24 @@ class TestModelosMapa(unittest.TestCase):
                         f"{nome}: posição de {jogador} sobrepõe obstáculos",
                     )
 
+    def test_todos_os_modelos_validam_acesso_e_equipamentos_nas_tres_cozinhas(self):
+        for nome, modelo in MODELOS_NOMEADOS:
+            for estilo in ("classico", "pizzaria", "reator"):
+                with self.subTest(modelo=nome, estilo=estilo):
+                    self.assertTrue(
+                        validar_modelo(modelo, estilo),
+                        problemas_validacao_modelo(modelo, estilo),
+                    )
+
+        self.assertEqual(len(MODELOS_MAPA), 18)
+        for indice, modelo in enumerate(MODELOS_MAPA, start=1):
+            for estilo in ("classico", "pizzaria", "reator"):
+                with self.subTest(modelo=indice, estilo=estilo):
+                    self.assertTrue(
+                        validar_modelo(modelo, estilo),
+                        problemas_validacao_modelo(modelo, estilo),
+                    )
+
 
 class TestMapasModulares(unittest.TestCase):
     def test_modelos_modulares_atuais_tem_a_grade_dos_modelos_base(self):
@@ -234,6 +258,53 @@ class TestMapasModulares(unittest.TestCase):
             with self.subTest(modelo=f"MODELEX{numero}"):
                 self.assertEqual(len(modelo), linhas)
                 self.assertEqual([len(linha) for linha in modelo], larguras)
+
+    def test_normalizacao_divide_bancadas_longas_sem_remover_dispensadores(self):
+        modelo_longo = list(MODELO1)
+        modelo_longo[3] = "W1" + "1" * 11 + "F" * 7 + "W"
+        modelo_longo[4] = "W1" + "2" * 11 + "F" * 7 + "W"
+        modelo_longo[5] = "W1" + "F" * 18 + "W"
+        normalizado_longo = normalizar_bancadas(modelo_longo)
+        segmentos = re.findall(r"[234LT]+", normalizado_longo[4])
+        self.assertEqual([len(segmento) for segmento in segmentos], [5, 5])
+
+        for nome, modelo in MODELOS_NOMEADOS:
+            with self.subTest(modelo=nome):
+                normalizado = normalizar_bancadas(modelo)
+                self.assertEqual(normalizado, modelo)
+                for linha in normalizado[3:9]:
+                    self.assertLessEqual(
+                        max(
+                            (len(run) for run in re.findall(r"[234LT]+", linha)),
+                            default=0,
+                        ),
+                        6,
+                    )
+
+        self.assertTrue({"4", "3", "T", "L"}.issubset(set(MODELO_9[8])))
+
+    def test_modulacao_rejeita_resultado_invalido_e_geracao_tem_fallback_limitado(self):
+        mapa_invalido = list(MODELO1)
+        linha = list(mapa_invalido[4])
+        linha[4:6] = list("44")
+        mapa_invalido[4] = "".join(linha)
+        problemas = problemas_validacao_modelo(mapa_invalido, "classico")
+        self.assertTrue(any("duplicados em sequência" in p for p in problemas))
+
+        primeiro = gerar_modelos_modulares(semente=42)
+        segundo = gerar_modelos_modulares(semente=42)
+        self.assertEqual(primeiro, segundo)
+        self.assertEqual(len(primeiro), len(MODELOS_BASE))
+
+        fallback = gerar_modelos_modulares(
+            semente=42,
+            configuracoes=[],
+            max_tentativas=0,
+        )
+        self.assertEqual(len(fallback), len(MODELOS_BASE))
+        for modelo in fallback:
+            for estilo in ("classico", "pizzaria", "reator"):
+                self.assertTrue(validar_modelo(modelo, estilo))
 
     def test_combinacoes_de_bases_e_configuracoes_respeitam_posicoes(self):
         for indice_base, base in enumerate(MODELOS_BASE, start=1):
@@ -260,6 +331,12 @@ class TestMapasModulares(unittest.TestCase):
                                 f"{nome} não ficou na posição ({x}, {y})",
                             )
 
+                    for estilo in ("classico", "pizzaria", "reator"):
+                        self.assertTrue(
+                            validar_modelo(modelo, estilo),
+                            problemas_validacao_modelo(modelo, estilo),
+                        )
+
     def test_composicao_rejeita_modulos_fora_dos_limites(self):
         largura = len(MODELO1[0])
         for nome, modulo in MODULOS_BANCADAS.items():
@@ -267,6 +344,10 @@ class TestMapasModulares(unittest.TestCase):
                 x_fora = largura
                 with self.assertRaisesRegex(ValueError, "ultrapassa os limites"):
                     compor_modelo_modular(MODELO1, [(nome, x_fora, 3)])
+
+    def test_composicao_rejeita_mapa_base_com_grade_invalida(self):
+        with self.assertRaisesRegex(ValueError, "13 linhas por 21 colunas"):
+            compor_modelo_modular(MODELO1[:-1], [])
 
     def test_composicao_rejeita_sobreposicao_com_tile_existente(self):
         for nome in MODULOS_BANCADAS:

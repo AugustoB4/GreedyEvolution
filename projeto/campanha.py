@@ -132,7 +132,8 @@ def caminho_padrao_progresso():
 
 
 class ProgressoCampanha:
-    VERSAO = 1
+    VERSAO = 2
+    VERSOES_MIGRAVEIS = (1, VERSAO)
 
     def __init__(self, caminho=None):
         self.caminho = Path(caminho) if caminho is not None else caminho_padrao_progresso()
@@ -159,7 +160,8 @@ class ProgressoCampanha:
         except (OSError, json.JSONDecodeError, UnicodeDecodeError, TypeError):
             return self._dados_padrao()
 
-        if not isinstance(dados, dict) or dados.get("versao") != self.VERSAO:
+        versao = dados.get("versao") if isinstance(dados, dict) else None
+        if type(versao) is not int or versao not in self.VERSOES_MIGRAVEIS:
             return self._dados_padrao()
 
         padrao = self._dados_padrao()
@@ -176,6 +178,16 @@ class ProgressoCampanha:
                 padrao["tutoriais_exibidos"][str(numero)] = (
                     tutoriais_brutos.get(str(numero)) is True
                 )
+
+        # A versão 1 gravava o tutorial como visto ao abrir a tela, antes de
+        # o jogador escolher iniciar. Sem resultado na fase 1, esse marcador
+        # pode ser falso; redefina somente esse tutorial e preserve o progresso.
+        if (
+            versao == 1
+            and padrao["tutoriais_exibidos"]["1"]
+            and padrao["melhores_estrelas"]["1"] == 0
+        ):
+            padrao["tutoriais_exibidos"]["1"] = False
 
         fases_desbloqueadas = [1]
         for numero_fase in range(1, TOTAL_FASES + 1):

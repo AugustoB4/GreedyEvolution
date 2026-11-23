@@ -197,16 +197,54 @@ PROBABILIDADES_PEDIDOS_POR_DIFICULDADE = {
     "difícil": (10, 35, 55),
 }
 
+# A distribuição é indexada pela posição dentro da galáxia. Ao começar uma
+# galáxia, a progressão retorna ao primeiro degrau sem mudar os critérios de
+# estrelas, que continuam definidos em DefinicaoFase.dificuldade.
+DIFICULDADES_PEDIDO = ("fácil", "médio", "difícil")
+PROBABILIDADES_PEDIDOS_POR_FASE_LOCAL = {
+    1: (70, 20, 10),
+    2: (65, 25, 10),
+    3: (60, 30, 10),
+    4: (55, 33, 12),
+    5: (50, 35, 15),
+}
+
 
 def pedidos_da_variante(variante):
     return PEDIDOS_POR_VARIANTE[variante]
 
 
-def criar_pedido_ponderado(variante, dificuldade):
-    """Cria somente pedidos da cozinha informada, com pesos da dificuldade."""
+def probabilidades_pedidos_da_fase(fase):
+    """Retorna os pesos fácil/médio/difícil para uma fase da campanha."""
+    fase_local = getattr(fase, "fase_na_galaxia", fase)
+    if type(fase_local) is not int or fase_local not in PROBABILIDADES_PEDIDOS_POR_FASE_LOCAL:
+        raise ValueError("Fase local sem distribuição de pedidos configurada")
+    pesos = PROBABILIDADES_PEDIDOS_POR_FASE_LOCAL[fase_local]
+    if any(peso < 0 for peso in pesos) or sum(pesos) != 100:
+        raise ValueError("A distribuição de pedidos deve somar 100%")
+    return pesos
+
+
+def sortear_dificuldade_pedido(fase):
+    pesos = probabilidades_pedidos_da_fase(fase)
+    return random.choices(DIFICULDADES_PEDIDO, weights=pesos, k=1)[0]
+
+
+def criar_pedido_ponderado(variante, fase):
+    """Sorteia uma dificuldade da fase e cria uma receita dessa cozinha.
+
+    A string de dificuldade preserva compatibilidade com chamadas antigas,
+    que usavam os pesos legados para escolher uma classe diretamente.
+    """
     classes_pedido = pedidos_da_variante(variante)
-    pesos = PROBABILIDADES_PEDIDOS_POR_DIFICULDADE[dificuldade]
-    classe_pedido = random.choices(classes_pedido, weights=pesos, k=1)[0]
+    if isinstance(fase, str):
+        pesos = PROBABILIDADES_PEDIDOS_POR_DIFICULDADE[fase]
+        classe_pedido = random.choices(classes_pedido, weights=pesos, k=1)[0]
+        return classe_pedido()
+
+    dificuldade = sortear_dificuldade_pedido(fase)
+    classe_por_dificuldade = dict(zip(DIFICULDADES_PEDIDO, classes_pedido))
+    classe_pedido = classe_por_dificuldade[dificuldade]
     return classe_pedido()
 
 
@@ -215,7 +253,10 @@ class ReceitaTV:
         tiles_dir = os.path.join(TILES_DIR, estilo) if estilo != "classico" else TILES_DIR
         self.sprite = pygame.image.load(os.path.join(tiles_dir, "RecipeTV.png")).convert_alpha()
         
-        self.fonte_titulo = pygame.font.Font(os.path.join(FONTS_DIR, "Orbitron.ttf"), 20)
+        self.fonte_titulo = pygame.font.Font(
+            os.path.join(FONTS_DIR, "PressStart2P.ttf"), 8
+        )
+        self.texto_titulo = self.fonte_titulo.render("PEDIDO", True, BRANCO)
         caminho_fonte_ingredientes = os.path.join(
             FONTS_DIR, "PressStart2P.ttf"
         )
@@ -224,43 +265,95 @@ class ReceitaTV:
             for tamanho in (9, 7, 6)
         )
         self.fonte_ingredientes = self.fontes_ingredientes[0]
+        self._cache_ingredientes = {}
         
         self.largura = TILE_SIZE * 3
         self.altura = TILE_SIZE * 3
 
         self.sprite = pygame.transform.scale(self.sprite,(self.largura, self.altura))
+        tamanho_painel = (self.largura, self.altura)
+        self.superficie_painel = pygame.Surface(
+            tamanho_painel, pygame.SRCALPHA
+        )
+        self.superficie_conteudo = pygame.Surface(
+            tamanho_painel, pygame.SRCALPHA
+        )
         
-    def desenhar(self, tela, pedido, jogador1: Personagem, jogador2: Personagem):
-        self.x = tela.get_width() - self.largura - 20
-        self.y = 0
-        
-        tv_rect = pygame.Rect(self.x, self.y, self.largura, self.altura)
-        
-        painel = pygame.Surface((self.largura, self.altura), pygame.SRCALPHA)
-        
-        if jogador1.rect.colliderect(tv_rect) or jogador2.rect.colliderect(tv_rect):
-            painel.set_alpha(155)
-        else:
-            painel.set_alpha(255)
+    def desenhar(
+        self,
+        tela,
+        pedido,
+        jogador1: Personagem,
+        jogador2: Personagem,
+        escala=1.0,
+        deslocamento=(0, 0),
+        largura_base=None,
+    ):
+        escala = max(0.01, float(escala))
+        deslocamento_x, deslocamento_y = deslocamento
+        largura_base = largura_base or tela.get_width()
+        tamanho = (
+            max(1, round(self.largura * escala)),
+            max(1, round(self.altura * escala)),
+        )
+        self.x = deslocamento_x + round(
+            (largura_base - self.largura - 20) * escala
+        )
+        self.y = deslocamento_y
+        tv_rect = pygame.Rect(self.x, self.y, *tamanho)
 
+        retangulos_jogadores = []
+        for jogador in (jogador1, jogador2):
+            rect = jogador.rect
+            retangulos_jogadores.append(
+                pygame.Rect(
+                    deslocamento_x + round(rect.x * escala),
+                    deslocamento_y + round(rect.y * escala),
+                    max(1, round(rect.width * escala)),
+                    max(1, round(rect.height * escala)),
+                )
+            )
+        alpha = (
+            155
+            if any(rect.colliderect(tv_rect) for rect in retangulos_jogadores)
+            else 255
+        )
+
+        painel = self.superficie_painel
+        painel.fill((0, 0, 0, 0))
         painel.blit(self.sprite, (0, 0))
-        titulo = self.fonte_titulo.render("PEDIDO", True, BRANCO)
+        painel.set_alpha(alpha)
+        painel_renderizado = (
+            painel if tamanho == (self.largura, self.altura)
+            else pygame.transform.scale(painel, tamanho)
+        )
+        tela.blit(painel_renderizado, tv_rect.topleft)
 
-        painel.blit(titulo, (15, 12))
+        conteudo = self.superficie_conteudo
+        conteudo.fill((0, 0, 0, 0))
+        conteudo.blit(self.texto_titulo, (15, 12))
         imagem_pedido = pygame.transform.scale(pedido.sprite, (40, 40))
 
-        painel.blit(imagem_pedido, (12, 48))
+        conteudo.blit(imagem_pedido, (12, 48))
 
         for indice, ingrediente in enumerate(pedido.ingredientes):
-            texto = None
-            for fonte in self.fontes_ingredientes:
-                texto = fonte.render(ingrediente.upper(), True, BRANCO)
-                if texto.get_width() <= self.largura - 66:
-                    break
+            chave = ingrediente.upper()
+            texto = self._cache_ingredientes.get(chave)
+            if texto is None:
+                for fonte in self.fontes_ingredientes:
+                    texto = fonte.render(chave, True, BRANCO)
+                    if texto.get_width() <= self.largura - 66:
+                        break
+                self._cache_ingredientes[chave] = texto
 
-            painel.blit(texto, (58, 48 + indice * 17))
+            conteudo.blit(texto, (58, 48 + indice * 17))
             
-        tela.blit(painel, (self.x, self.y))
+        conteudo.set_alpha(alpha)
+        conteudo_renderizado = (
+            conteudo if tamanho == (self.largura, self.altura)
+            else pygame.transform.scale(conteudo, tamanho)
+        )
+        tela.blit(conteudo_renderizado, tv_rect.topleft)
             
                 
                 

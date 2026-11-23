@@ -197,6 +197,60 @@ class TestEscorregoes(unittest.TestCase):
         self.assertFalse(personagem.escorregando)
         sorteio.assert_not_called()
 
+
+class TestMovimento(unittest.TestCase):
+    def _mover_por_um_segundo(self, personagem, teclas, quadros, dt):
+        with (
+            patch("player.pygame.key.get_pressed", return_value=teclas),
+            patch("player.som_andar"),
+        ):
+            for _ in range(quadros):
+                personagem.mover([], dt=dt)
+
+    def test_distancia_horizontal_e_independente_do_fps(self):
+        deslocamentos = []
+        for quadros, dt in ((30, 1 / 30), (60, 1 / 60)):
+            personagem = Romerio(100, 100)
+            x_inicial = personagem.pos_x
+            teclas = TeclasPressionadas({personagem.teclas["direita"]: True})
+            self._mover_por_um_segundo(personagem, teclas, quadros, dt)
+            deslocamentos.append(personagem.pos_x - x_inicial)
+
+        self.assertEqual(deslocamentos, [240, 240])
+
+    def test_movimento_diagonal_nao_e_mais_rapido_que_horizontal(self):
+        personagem = Romerio(100, 100)
+        x_inicial, y_inicial = personagem.pos_x, personagem.pos_y
+        teclas = TeclasPressionadas({
+            personagem.teclas["direita"]: True,
+            personagem.teclas["baixo"]: True,
+        })
+
+        self._mover_por_um_segundo(personagem, teclas, 60, 1 / 60)
+
+        deslocamento_x = personagem.pos_x - x_inicial
+        deslocamento_y = personagem.pos_y - y_inicial
+        self.assertAlmostEqual(deslocamento_x, deslocamento_y, delta=1)
+        self.assertAlmostEqual(
+            (deslocamento_x**2 + deslocamento_y**2) ** 0.5,
+            240,
+            delta=1,
+        )
+
+    def test_subpassos_de_fps_baixo_nao_atravessam_estacoes(self):
+        personagem = Romerio(0, 0)
+        obstaculo = pygame.Rect(60, personagem.rect.y, 48, 48)
+        teclas = TeclasPressionadas({personagem.teclas["direita"]: True})
+
+        with (
+            patch("player.pygame.key.get_pressed", return_value=teclas),
+            patch("player.som_andar"),
+        ):
+            personagem.mover([obstaculo], dt=0.5)
+
+        self.assertEqual(personagem.rect.right, obstaculo.left)
+        self.assertFalse(personagem.rect.colliderect(obstaculo))
+
     def test_jogo_entrega_ingredientes_das_tres_cozinhas_ao_movimento(self):
         casos = (
             ("classica", "classico", Tomate, None),
@@ -302,11 +356,11 @@ class TestInteracoesEPosicionamento(unittest.TestCase):
             pygame.K_UP: True,
             pygame.K_w: True,
             pygame.K_KP1: True,
-            pygame.K_z: True,
+            pygame.K_f: True,
         })
         eventos = [
             pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_KP1}),
-            pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_z}),
+            pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_f}),
             pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_UP}),
             pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_w}),
         ]
@@ -517,6 +571,20 @@ class TestAcessoDosMapas(unittest.TestCase):
                                         f"{nome}/{estilo}: montagem "
                                         f"inacessível em {(coluna, linha)}",
                                     )
+
+
+class TestPontosParaLargar(unittest.TestCase):
+    def test_ajudante_reconhece_superficies_de_largar_incluindo_forno(self):
+        mapa = object.__new__(Mapa)
+        mapa.mapa = ["FBOX"]
+
+        self.assertTrue(mapa.pode_largar(0, 0))
+        self.assertTrue(mapa.pode_largar(TILE_SIZE, 0))
+        self.assertTrue(mapa.pode_largar(2 * TILE_SIZE, 0))
+        self.assertFalse(mapa.pode_largar(3 * TILE_SIZE, 0))
+        self.assertFalse(mapa.pode_largar(-1, 0))
+        self.assertFalse(mapa.pode_largar(0, -1))
+        self.assertFalse(mapa.pode_largar(0, TILE_SIZE))
 
 
 if __name__ == "__main__":

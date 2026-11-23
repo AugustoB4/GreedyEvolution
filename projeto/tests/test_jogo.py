@@ -68,6 +68,50 @@ class TestEntrega(unittest.TestCase):
         self.assertIsInstance(jogo.pedido_atual, PedidoMedio)
 
 
+class TestEventosSimultaneos(unittest.TestCase):
+    def test_entrega_final_do_jogador1_bloqueia_acao_do_jogador2(self):
+        fase = Fase(tempo=60, pontuacao=20)
+        produto = object()
+        jogador1 = SimpleNamespace(
+            atualizar_direcao=Mock(),
+            verificar_habilidades=Mock(return_value=produto),
+        )
+        jogador2 = SimpleNamespace(
+            atualizar_direcao=Mock(),
+            verificar_habilidades=Mock(return_value=None),
+        )
+        jogo = object.__new__(Jogo)
+        jogo.campanha_ativa = True
+        jogo.fase = fase
+        jogo.rodando = True
+        jogo.player1 = jogador1
+        jogo.player2 = jogador2
+        jogo.mapa = SimpleNamespace(mapa=[], dispensadores_tematicos={})
+        jogo.ingredientes_tematicos = {}
+        jogo.produtos = []
+        for nome in (
+            "armarios", "armarios_queijo", "armarios_tomate",
+            "armarios_alface", "geladeiras", "tomates", "alfaces",
+            "queijos", "paos", "carnes", "lixeiras", "montagens",
+            "entregas",
+        ):
+            setattr(jogo, nome, [])
+        jogo.processar_entrega = Mock(
+            side_effect=lambda _: fase.encerrar("vitoria", estrelas=1)
+        )
+        evento = pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_f})
+
+        with (
+            patch("jogo.pygame.event.get", return_value=[evento]),
+            patch("jogo.pygame.key.get_pressed", return_value=[]),
+        ):
+            jogo.verificarEventos()
+
+        jogo.processar_entrega.assert_called_once_with(produto)
+        jogador2.verificar_habilidades.assert_not_called()
+        self.assertTrue(fase.encerrada)
+
+
 class TestCaminhosSpritesPersonagens(unittest.TestCase):
     def test_caminhos_e_arquivos_dos_dois_personagens_por_estilo(self):
         personagem = object.__new__(Romerio)
@@ -553,14 +597,7 @@ class TestRenderizacao(unittest.TestCase):
             (jogo.largura_logica, jogo.altura_logica),
             (1008, 624),
         )
-        self.assertEqual(
-            jogo.superficie_interface.get_size(),
-            (jogo.largura, jogo.altura),
-        )
-        self.assertIs(
-            jogo.superficie_interface.get_parent(),
-            jogo.superficie_jogo,
-        )
+        self.assertFalse(hasattr(jogo, "superficie_interface"))
 
     def test_redimensionamento_preserva_proporcao_e_cabe_na_janela(self):
         jogo = criar_jogo_pizzaria()
@@ -611,13 +648,18 @@ class TestRenderizacao(unittest.TestCase):
             def blit(self, superficie, posicao):
                 eventos.append(("apresentar", superficie, posicao))
 
+            def get_width(self):
+                return 1000
+
+            def get_height(self):
+                return 600
+
         jogo = object.__new__(Jogo)
         jogo.superficie_jogo = pygame.Surface((1008, 624))
-        jogo.superficie_interface = jogo.superficie_jogo.subsurface(
-            (0, 0, 1000, 600)
-        )
         jogo.tamanho_renderizado = (969, 600)
         jogo.posicao_renderizada = (15, 0)
+        jogo.escala_jogo = 600 / 624
+        jogo.largura = 1000
         jogo.tela = JanelaDeTeste()
 
         jogo.mapa = SimpleNamespace(
@@ -652,13 +694,17 @@ class TestRenderizacao(unittest.TestCase):
         with patch(
             "jogo.pygame.transform.scale",
             side_effect=redimensionar,
-        ), patch("jogo.pygame.display.flip"):
+        ), patch(
+            "jogo.pygame.display.flip",
+            side_effect=lambda: eventos.append(("flip",)),
+        ):
             jogo.desenhar()
 
-        indices_desenho = [
+        indices_desenho_cenario = [
             indice
             for indice, evento in enumerate(eventos)
             if evento[0] == "desenho"
+            and evento[1] not in ("fase", "receita")
         ]
         indice_redimensionamento = next(
             indice
@@ -670,20 +716,36 @@ class TestRenderizacao(unittest.TestCase):
             for indice, evento in enumerate(eventos)
             if evento[0] == "apresentar"
         )
+        indice_hud = next(
+            indice
+            for indice, evento in enumerate(eventos)
+            if evento[:2] == ("desenho", "fase")
+        )
+        indice_tv = next(
+            indice
+            for indice, evento in enumerate(eventos)
+            if evento[:2] == ("desenho", "receita")
+        )
+        indice_flip = next(
+            indice for indice, evento in enumerate(eventos)
+            if evento[0] == "flip"
+        )
 
-        self.assertTrue(indices_desenho)
-        self.assertLess(max(indices_desenho), indice_redimensionamento)
+        self.assertTrue(indices_desenho_cenario)
+        self.assertLess(max(indices_desenho_cenario), indice_redimensionamento)
         self.assertLess(indice_redimensionamento, indice_apresentacao)
+        self.assertLess(indice_apresentacao, indice_hud)
+        self.assertLess(indice_hud, indice_tv)
+        self.assertLess(indice_tv, indice_flip)
 
         for evento in eventos:
             if evento[0] != "desenho":
                 continue
             superficie = evento[2]
-            self.assertTrue(
-                superficie is jogo.superficie_jogo
-                or superficie is jogo.superficie_interface,
-                f"{evento[1]} foi desenhado fora da superfície lógica",
-            )
+            if evento[1] in ("fase", "receita"):
+                self.assertIs(superficie, jogo.tela)
+            else:
+                self.assertIs(superficie, jogo.superficie_jogo)
 
         evento_redimensionamento = eventos[indice_redimensionamento]
         evento_apresentacao = eventos[indice_apresentacao]
@@ -751,7 +813,7 @@ class TestRenderizacao(unittest.TestCase):
             ),
             posicoes_estacoes,
         )
-        self.assertEqual(jogo.televisao.x, 836)
+        self.assertEqual(jogo.televisao.x, 827)
 
     def test_menus_de_inicio_e_gameover_recebem_a_janela_original(self):
         jogo = criar_jogo_pizzaria()

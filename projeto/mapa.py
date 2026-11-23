@@ -1,6 +1,8 @@
 import os
 import pygame
 import random
+import re
+from collections import deque
 
 from constantes import TILE_SIZE
 from caminhos import tiles_dir_estilo
@@ -43,8 +45,8 @@ MODELO3 = [
     "WYIIIIIIIIIIIIIIIIIYW",
     "W1R2B22322O22322B2S1W",
     "W1FFFFFFFFFFFFFFFFF1W",
-    "W1F111111FFFFF111FFNM",
-    "W1F223322FFFFF2LTFF1W",
+    "W1FF11111FFFFF111FFNM",
+    "W1FF22322FFFFF2LTFF1W",
     "W1FFFFFFFFFFFFFFFFF1W",
     "W1FFFFFFFFFFFFFFFFF1W",
     "W1FF111FFFFF111111F1W",
@@ -137,8 +139,8 @@ MODELO_8 = [
 
 MODELO_9 = [
     "WYIIIIIIIIIIIIIIIIIYW",
-    "W1S2B11112OS211112R1W",
-    "W1FFF1111FFF1111FFF1W",
+    "W1S2B11112OS111112R1W",
+    "W1FFFFFFFFFFFFFFFFF1W",
     "W1FFF1111FFF1111FFF1W",
     "W1FFF2LT2FFF2334FFF1W",
     "W1FFFFFFFFFFFFFFFFF1W",
@@ -155,16 +157,70 @@ MODELO_9 = [
 
 MODELOS_BASE = [MODELO1, MODELO2, MODELO3, MODELO4, MODELO5, MODELO_6, MODELO_7, MODELO_8, MODELO_9]
 
+LARGURA_BANCADA_MAXIMA = 6
+DISTANCIA_MAXIMA_INICIAL_EQUIPAMENTO = 24
+DISTANCIA_MAXIMA_ENTRE_INGREDIENTES = 24
+
+
+def normalizar_bancadas(modelo, largura_maxima=LARGURA_BANCADA_MAXIMA):
+    """Divide bancadas frontais longas em segmentos sem remover dispensadores."""
+    if largura_maxima < 1:
+        raise ValueError("A largura máxima de bancada deve ser positiva")
+    if modelo and any(len(linha) != len(modelo[0]) for linha in modelo):
+        raise ValueError("O mapa-base precisa ter linhas retangulares")
+    matriz = [list(linha) for linha in modelo]
+    y_final = min(9, len(matriz))
+    for y in range(3, y_final):
+        while True:
+            excedentes = [
+                (match.start(), match.end())
+                for match in re.finditer(r"[234LT]+", "".join(matriz[y]))
+                if match.end() - match.start() > largura_maxima
+            ]
+            if not excedentes:
+                break
+
+            inicio, fim = excedentes[0]
+            candidatos = [
+                indice
+                for indice in range(inicio, fim)
+                if matriz[y][indice] == "2"
+                and y > 0
+                and matriz[y - 1][indice] == "1"
+                and indice - inicio <= largura_maxima
+                and fim - indice - 1 <= largura_maxima
+            ]
+            if not candidatos:
+                break
+
+            divisao = min(
+                candidatos,
+                key=lambda indice: (
+                    abs((indice - inicio) - (fim - indice - 1)),
+                    abs(indice - (inicio + fim - 1) / 2),
+                ),
+            )
+            matriz[y][divisao] = "F"
+            matriz[y - 1][divisao] = "F"
+
+    return ["".join(linha) for linha in matriz]
+
+
+for _modelo_base in MODELOS_BASE:
+    _modelo_base[:] = normalizar_bancadas(_modelo_base)
+
 MODULOS_BANCADAS = {
     "dupla": ("1111", "2332"),
     "dupla_ingredientes": ("1111", "2LT2"),
     "dupla_queijo": ("1111", "4332"),
     "ilha_6": ("111111", "223322"),
-    "ilha_6_ingredientes": ("111111", "22LTT2"),
-    "ilha_6_mista": ("111111", "443344"),
+    "ilha_6_ingredientes": ("111111", "2L2T22"),
+    "ilha_6_mista": ("111111", "432324"),
 }
 
 def compor_modelo_modular(base, posicionamentos):
+    if len(base) != 13 or any(len(linha) != 21 for linha in base):
+        raise ValueError("O mapa-base precisa ter 13 linhas por 21 colunas")
     matriz = [list(linha) for linha in base]
 
     for y in range(3, 9):
@@ -183,7 +239,7 @@ def compor_modelo_modular(base, posicionamentos):
                     raise ValueError(f"Módulo {nome} sobrepõe o tile {matriz[py][px]} em {(px, py)}")
                 matriz[py][px] = tile
 
-    return ["".join(linha) for linha in matriz]
+    return normalizar_bancadas(["".join(linha) for linha in matriz])
 
 CONFIGURACOES_MODELEX = [
     [
@@ -242,36 +298,6 @@ CONFIGURACOES_MODELEX = [
     ],
 ]
 
-BASES_EMBARALHADAS = random.sample(
-    MODELOS_BASE,
-    len(MODELOS_BASE)
-)
-
-MODELOS_MODULARES = []
-
-for base, configuracao in zip(
-    BASES_EMBARALHADAS,
-    CONFIGURACOES_MODELEX
-):
-    modelo = compor_modelo_modular(
-        base,
-        configuracao
-    )
-
-    MODELOS_MODULARES.append(modelo)
-
-(
-    MODELEX1,
-    MODELEX2,
-    MODELEX3,
-    MODELEX4,
-    MODELEX5,
-    MODELEX6,
-    MODELEX7,
-    MODELEX8,
-    MODELEX9
-) = MODELOS_MODULARES
-
 "W = Wall / Parede"
 "F = Floor / Chão"
 "1 = 1Counter / Bancada de trás"
@@ -287,32 +313,6 @@ for base, configuracao in zip(
 "N = DeliveryBelt / Esteira de Delivery"
 "M = DeliveryWindow / Janela de Delivery"
 "R = Refrigerator / Geladeira"
-
-MODELOS_MAPA = [
-    *MODELOS_BASE,
-    *MODELOS_MODULARES
-]
-
-VARIANTES_COZINHA = {
-    "classica": {
-        "estilo": "classico",
-        "pedido": "hamburguer",
-        "modelos": MODELOS_MAPA
-    },
-
-    "pizzaria": {
-        "estilo": "pizzaria",
-        "pedido": "pizza",
-        "modelos": MODELOS_MAPA
-    },
-
-    "reator": {
-        "estilo": "reator",
-        "pedido": "sushi",
-        "modelos": MODELOS_MAPA
-    }
-}
-
 
 SIMBOLOS_POR_ESTILO = {
     "pizzaria": {"3": "D", "4": "Q", "T": "V", "L": "2", "R": "2"},
@@ -331,6 +331,253 @@ DISPENSADORES_TEMATICOS = {
         "C": (AlgaCosmica, "CosmicSeaweed", "CosmicSeaweedPin.png"),
         "G": (PeixeNebuloso, "NebulaFish", "NebulaFishPin.png"),
     },
+}
+
+
+def _remapear_modelo(modelo, estilo):
+    remapeamento = SIMBOLOS_POR_ESTILO.get(estilo, {})
+    return [
+        "".join(remapeamento.get(simbolo, simbolo) for simbolo in linha)
+        for linha in modelo
+    ]
+
+
+def _distancias_piso(pisos, origens):
+    origens_validas = [origem for origem in origens if origem in pisos]
+    distancias = {origem: 0 for origem in origens_validas}
+    fila = deque(origens_validas)
+    while fila:
+        x, y = fila.popleft()
+        for vizinho in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if vizinho in pisos and vizinho not in distancias:
+                distancias[vizinho] = distancias[(x, y)] + 1
+                fila.append(vizinho)
+    return distancias
+
+
+def _celulas_de_acesso(modelo, posicao, pisos):
+    x, y = posicao
+    return tuple(
+        vizinho
+        for vizinho in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))
+        if vizinho in pisos
+    )
+
+
+def problemas_validacao_modelo(modelo, estilo="classico"):
+    """Lista falhas estruturais, de acesso e de distribuição do mapa."""
+    if not modelo or len(modelo) != 13 or any(len(linha) != 21 for linha in modelo):
+        return ("grade precisa ter 13 linhas por 21 colunas",)
+
+    modelo_estilo = _remapear_modelo(modelo, estilo)
+    simbolos_validos = set("WF1234SBOYINMRLTU@")
+    simbolos_validos.update(SIMBOLOS_POR_ESTILO.get(estilo, {}).values())
+    simbolos_validos.update(DISPENSADORES_TEMATICOS.get(estilo, {}))
+    usados = set("".join(modelo_estilo))
+    desconhecidos = usados - simbolos_validos
+    problemas = []
+    if desconhecidos:
+        problemas.append(f"símbolos sem tile: {sorted(desconhecidos)}")
+
+    if estilo == "classico":
+        ingredientes = ("3", "4", "T", "L", "R")
+    elif estilo == "pizzaria":
+        ingredientes = ("D", "Q", "V")
+    elif estilo == "reator":
+        ingredientes = ("A", "C", "G")
+    else:
+        problemas.append(f"estilo desconhecido: {estilo}")
+        return tuple(problemas)
+
+    texto = "".join(modelo_estilo)
+    for simbolo in ingredientes:
+        if simbolo not in texto:
+            problemas.append(f"ingrediente obrigatório ausente: {simbolo}")
+    for simbolo in "SOB":
+        if simbolo not in texto:
+            problemas.append(f"equipamento obrigatório ausente: {simbolo}")
+    for simbolo in "NMU":
+        if texto.count(simbolo) != 1:
+            problemas.append(f"esperado exatamente um equipamento {simbolo}")
+
+    # Os módulos frontais precisam de uma bancada de apoio alinhada acima.
+    # Os símbolos da linha superior são estações de parede e não entram nesta regra.
+    for y in range(3, 9):
+        linha = modelo[y]
+        for match in re.finditer(r"[234LT]+", linha):
+            inicio, fim = match.span()
+            if fim - inicio > LARGURA_BANCADA_MAXIMA:
+                problemas.append(
+                    f"bancada frontal com {fim - inicio} tiles na linha {y}"
+                )
+            if any(modelo[y - 1][x] != "1" for x in range(inicio, fim)):
+                problemas.append(f"bancada sem apoio alinhado na linha {y}")
+            if any(modelo[y + 1][x] != "F" for x in range(inicio, fim)):
+                problemas.append(f"bancada bloqueia o acesso na linha {y}")
+        if any(duplicado in linha for duplicado in ("44", "TT", "LL")):
+            problemas.append(f"dispensadores duplicados em sequência na linha {y}")
+
+    pisos = {
+        (x, y)
+        for y, linha in enumerate(modelo_estilo)
+        for x, simbolo in enumerate(linha)
+        if simbolo == "F"
+    }
+    inicio_jogador_1 = ((624 + 32) // TILE_SIZE, (192 + 86) // TILE_SIZE)
+    inicio_jogador_2 = ((240 + 32) // TILE_SIZE, (240 + 86) // TILE_SIZE)
+    distancias_inicio = _distancias_piso(pisos, (inicio_jogador_1,))
+    distancias_inicio_2 = _distancias_piso(pisos, (inicio_jogador_2,))
+    if inicio_jogador_1 not in pisos or inicio_jogador_2 not in pisos:
+        problemas.append("jogadores não começam no mesmo corredor acessível")
+
+    simbolos_estacao = set(ingredientes) | set("SOBNU")
+    posicoes_estacoes = {
+        simbolo: [
+            (x, y)
+            for y, linha in enumerate(modelo_estilo)
+            for x, atual in enumerate(linha)
+            if atual == simbolo
+        ]
+        for simbolo in simbolos_estacao
+    }
+    celulas_interativas = {
+        (x, y)
+        for y in range(3, 9)
+        for x, simbolo in enumerate(modelo_estilo[y])
+        if simbolo in set("234")
+        | set(SIMBOLOS_POR_ESTILO.get(estilo, {}).values())
+    }
+    grupos_acesso = {}
+    todas_estacoes = set(celulas_interativas)
+    for simbolo, posicoes in posicoes_estacoes.items():
+        acessos = {
+            acesso
+            for posicao in posicoes
+            for acesso in _celulas_de_acesso(modelo_estilo, posicao, pisos)
+        }
+        if not acessos:
+            problemas.append(f"equipamento {simbolo} sem piso de acesso")
+        elif not all(
+            any(acesso in distancias for acesso in acessos)
+            for distancias in (distancias_inicio, distancias_inicio_2)
+        ):
+            problemas.append(f"equipamento {simbolo} inacessível a um jogador")
+        if simbolo in ingredientes:
+            grupos_acesso[simbolo] = acessos
+        todas_estacoes.update(posicoes)
+
+    for posicao in celulas_interativas:
+        acessos = _celulas_de_acesso(modelo_estilo, posicao, pisos)
+        if not acessos or not all(
+            any(acesso in distancias for acesso in acessos)
+            for distancias in (distancias_inicio, distancias_inicio_2)
+        ):
+            problemas.append("bancada sem acesso transitável")
+
+    distancia_maxima = 0
+    for posicao in todas_estacoes:
+        acessos = _celulas_de_acesso(modelo_estilo, posicao, pisos)
+        for distancias_inicio_jogador in (distancias_inicio, distancias_inicio_2):
+            distancias = [
+                distancias_inicio_jogador[acesso]
+                for acesso in acessos
+                if acesso in distancias_inicio_jogador
+            ]
+            if distancias:
+                distancia_maxima = max(distancia_maxima, min(distancias))
+    if distancia_maxima > DISTANCIA_MAXIMA_INICIAL_EQUIPAMENTO:
+        problemas.append("equipamento essencial distante das posições iniciais")
+
+    nomes_ingredientes = list(ingredientes)
+    for indice, nome_a in enumerate(nomes_ingredientes):
+        acessos_a = grupos_acesso.get(nome_a, set())
+        distancias = _distancias_piso(pisos, acessos_a)
+        for nome_b in nomes_ingredientes[indice + 1:]:
+            acessos_b = grupos_acesso.get(nome_b, set())
+            distancias_validas = [distancias[p] for p in acessos_b if p in distancias]
+            if distancias_validas and min(distancias_validas) > DISTANCIA_MAXIMA_ENTRE_INGREDIENTES:
+                problemas.append(f"ingredientes {nome_a} e {nome_b} muito distantes")
+
+    return tuple(dict.fromkeys(problemas))
+
+
+def validar_modelo(modelo, estilo="classico"):
+    return not problemas_validacao_modelo(modelo, estilo)
+
+
+SEMENTE_MODELOS_MODULARES = 261122
+MAX_TENTATIVAS_MAPA_MODULAR = len(MODELOS_BASE) * len(CONFIGURACOES_MODELEX)
+
+
+def gerar_modelos_modulares(
+    semente=SEMENTE_MODELOS_MODULARES,
+    configuracoes=None,
+    max_tentativas=None,
+):
+    """Gera uma variante por base com tentativas limitadas e fallback válido."""
+    rng = random.Random(semente)
+    bases = rng.sample(MODELOS_BASE, len(MODELOS_BASE))
+    configs = CONFIGURACOES_MODELEX if configuracoes is None else configuracoes
+    indices_configs = list(range(len(configs)))
+    limite = (
+        MAX_TENTATIVAS_MAPA_MODULAR
+        if max_tentativas is None
+        else max(0, int(max_tentativas))
+    )
+    tentativas = 0
+    configs_usadas = set()
+    modelos = []
+
+    for base in bases:
+        escolhido = None
+        ordem_configs = rng.sample(indices_configs, len(indices_configs))
+        for indice_config in ordem_configs:
+            if indice_config in configs_usadas:
+                continue
+            if tentativas >= limite:
+                break
+            tentativas += 1
+            try:
+                candidato = compor_modelo_modular(base, configs[indice_config])
+            except (IndexError, KeyError, TypeError, ValueError):
+                continue
+            if all(
+                validar_modelo(candidato, estilo)
+                for estilo in ("classico", "pizzaria", "reator")
+            ):
+                escolhido = candidato
+                configs_usadas.add(indice_config)
+                break
+
+        if escolhido is None:
+            fallback = base if all(
+                validar_modelo(base, estilo)
+                for estilo in ("classico", "pizzaria", "reator")
+            ) else MODELO1
+            escolhido = list(fallback)
+        modelos.append(escolhido)
+
+    return modelos
+
+
+MODELOS_MODULARES = gerar_modelos_modulares()
+(
+    MODELEX1,
+    MODELEX2,
+    MODELEX3,
+    MODELEX4,
+    MODELEX5,
+    MODELEX6,
+    MODELEX7,
+    MODELEX8,
+    MODELEX9,
+) = MODELOS_MODULARES
+MODELOS_MAPA = [*MODELOS_BASE, *MODELOS_MODULARES]
+
+VARIANTES_COZINHA = {
+    "classica": {"estilo": "classico", "pedido": "hamburguer", "modelos": MODELOS_MAPA},
+    "pizzaria": {"estilo": "pizzaria", "pedido": "pizza", "modelos": MODELOS_MAPA},
+    "reator": {"estilo": "reator", "pedido": "sushi", "modelos": MODELOS_MAPA},
 }
 
 
@@ -647,5 +894,6 @@ class Mapa:
         if coluna < 0 or coluna >= len(self.mapa[linha]):
             return False
 
-        return self.mapa[linha][coluna] in ("F", "B")
+        # Fornos são superfícies de preparo e aceitam ingredientes largados.
+        return self.mapa[linha][coluna] in ("F", "B", "O")
 

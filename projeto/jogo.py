@@ -1,4 +1,3 @@
-import os
 import pygame
 import random
 
@@ -22,7 +21,6 @@ from pedido import ReceitaTV
 from interface_campanha import InterfaceCampanha
 
 from sons import som_inicial, som_face
-from caminhos import BACKGROUND_DIR
 
 class Jogo:
     def __init__(
@@ -84,9 +82,6 @@ class Jogo:
         self.superficie_jogo = pygame.Surface(
             (self.largura_logica, self.altura_logica)
         )
-        self.superficie_interface = self.superficie_jogo.subsurface(
-            (0, 0, self.largura, self.altura)
-        )
 
         self.escala_jogo = min(
             self.largura / self.largura_logica,
@@ -122,7 +117,7 @@ class Jogo:
         if campanha:
             self.pedido_atual = criar_pedido_ponderado(
                 self.tipo_pedido,
-                self.definicao_fase.dificuldade,
+                self.definicao_fase,
             )
         else:
             self.pedido_atual = random.choice(
@@ -139,17 +134,6 @@ class Jogo:
         self.lixeiras = self.mapa.lixos
         self.entregas = self.mapa.entregas
 
-        self.background = pygame.image.load(
-            os.path.join(
-                BACKGROUND_DIR,
-                "StartMenuBG.png"
-            )
-        ).convert()
-
-        self.background = pygame.transform.scale(
-            self.background,
-            (self.largura, self.altura)
-        )
         self.player1 = Romerio(624, 192, self.estilo)
         self.player2 = Brito(240, 240, self.estilo)
 
@@ -173,6 +157,7 @@ class Jogo:
             and produto.familia == pedido.familia
             and produto.receita_id == pedido.receita_id
         )
+        self.fase.destacar_entrega(pedido_correto)
 
         if modo_campanha and pedido_correto:
             self.fase.registrar_acerto(
@@ -207,6 +192,7 @@ class Jogo:
                 pedido.tempo,
                 pedido.pontuacao,
             )
+            self.fase.entregas_corretas += 1
         else:
             self.fase.diminuir_tempo_pontuacao(
                 pedido.tempo,
@@ -223,7 +209,7 @@ class Jogo:
                 return self.pedido_atual
             self.pedido_atual = criar_pedido_ponderado(
                 self.tipo_pedido,
-                self.definicao_fase.dificuldade,
+                self.definicao_fase,
             )
             for montagem in self.montagens:
                 montagem.pedido = self.pedido_atual
@@ -259,6 +245,12 @@ class Jogo:
             self.ingredientes_tematicos, self.produtos,
             )
 
+            if hamburguer1 is not None:
+                self.processar_entrega(hamburguer1)
+
+            if getattr(self, "campanha_ativa", False) and self.fase.encerrada:
+                break
+
             hamburguer2 = self.player2.verificar_habilidades(
                 evento, self.armarios, self.armarios_queijo,
                 self.armarios_tomate, self.armarios_alface,
@@ -268,9 +260,6 @@ class Jogo:
                 self.mapa.dispensadores_tematicos,
                 self.ingredientes_tematicos, self.produtos,
             )
-
-            if hamburguer1 is not None:
-                self.processar_entrega(hamburguer1)
 
             if hamburguer2 is not None:
                 self.processar_entrega(hamburguer2)
@@ -302,8 +291,8 @@ class Jogo:
                 for ingrediente in lista
             ),
         ]
-        self.player1.mover(self.mapa.colisoes, ingredientes_chao)
-        self.player2.mover(self.mapa.colisoes, ingredientes_chao)
+        self.player1.mover(self.mapa.colisoes, ingredientes_chao, dt=dt)
+        self.player2.mover(self.mapa.colisoes, ingredientes_chao, dt=dt)
         
         self.player1.verificar_indicador(
             self.lixeiras, self.armarios, self.armarios_queijo,
@@ -382,20 +371,22 @@ class Jogo:
         self.player1.desenhar(self.superficie_jogo)
         self.player2.desenhar(self.superficie_jogo)
 
-        self.fase.desenhar(self.superficie_interface)
-        self.televisao.desenhar(
-            self.superficie_interface,
-            self.pedido_atual,
-            self.player1,
-            self.player2,
-        )
-
         superficie_redimensionada = pygame.transform.scale(
             self.superficie_jogo,
             self.tamanho_renderizado,
         )
         self.tela.fill(PRETO)
         self.tela.blit(superficie_redimensionada, self.posicao_renderizada)
+        self.fase.desenhar(self.tela)
+        self.televisao.desenhar(
+            self.tela,
+            self.pedido_atual,
+            self.player1,
+            self.player2,
+            self.escala_jogo,
+            self.posicao_renderizada,
+            self.superficie_jogo.get_width(),
+        )
         pygame.display.flip()
     def reiniciar(self):
         som_inicial.stop()
@@ -441,10 +432,12 @@ class Jogo:
         ):
             return "iniciar"
 
-        # O tutorial conta como exibido quando a tela é aberta e fica salvo
-        # antes da interação, portanto fechar o jogo não o faz reaparecer.
-        self.progresso_campanha.marcar_tutorial_exibido(definicao.galaxia)
-        return interface.executar_tutorial(definicao.galaxia)
+        acao = interface.executar_tutorial(definicao.galaxia)
+        # Só registra a apresentação depois que o jogador confirma o início.
+        # Voltar à campanha ou fechar nessa tela não deve ocultar o tutorial.
+        if acao == "iniciar":
+            self.progresso_campanha.marcar_tutorial_exibido(definicao.galaxia)
+        return acao
 
     def _executar_fase_campanha(self):
         while self.rodando and not self.fase.encerrada:

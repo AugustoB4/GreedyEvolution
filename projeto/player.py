@@ -38,6 +38,8 @@ class Personagem:
         self.escorregando = False
         self.inicio_escorregao = None
         self._ingredientes_sob_os_pes = set()
+        self._resto_movimento_x = 0.0
+        self._resto_movimento_y = 0.0
         
         self.oscilacao = 0
         self.inclinacao = 0
@@ -131,6 +133,8 @@ class Personagem:
                     self.inicio_escorregao = pygame.time.get_ticks()
                     self.andando = False
                     self.oscilacao = 0
+                    self._resto_movimento_x = 0.0
+                    self._resto_movimento_y = 0.0
                     self.parar_som_andar()
                     break
 
@@ -154,7 +158,7 @@ class Personagem:
         if teclas_pressionadas[self.teclas["baixo"]]:
             self.direcao = "frente"
 
-    def mover(self, colisoes, ingredientes_chao=None):
+    def mover(self, colisoes, ingredientes_chao=None, dt=1 / 60):
         if self._atualizar_estado_escorregao():
             self._verificar_escorregao(ingredientes_chao, False)
             return
@@ -170,38 +174,68 @@ class Personagem:
         self.atualizar_direcao(teclas_pressionadas)
 
         if teclas_pressionadas[self.teclas["esquerda"]]:
-            dirX = -self.velocidade
+            dirX = -1
 
         if teclas_pressionadas[self.teclas["direita"]]:
-            dirX = self.velocidade
+            dirX = 1
 
         if teclas_pressionadas[self.teclas["cima"]]:
-            dirY = -self.velocidade
+            dirY = -1
 
         if teclas_pressionadas[self.teclas["baixo"]]:
-            dirY = self.velocidade
+            dirY = 1
 
-        self.rect.x += dirX
+        if dirX and dirY:
+            fator_diagonal = 1 / math.sqrt(2)
+        else:
+            fator_diagonal = 1.0
+
+        escala_tempo = max(0.0, float(dt)) * 60
+        movimento_x = dirX * self.velocidade * fator_diagonal * escala_tempo
+        movimento_y = dirY * self.velocidade * fator_diagonal * escala_tempo
+        passos = max(
+            1,
+            math.ceil(
+                max(abs(movimento_x), abs(movimento_y))
+                / max(1, self.velocidade)
+            ),
+        )
+        passo_x = movimento_x / passos
+        passo_y = movimento_y / passos
         self.atualizar_animacao()
 
-        for parede in colisoes:
-            if self.rect.colliderect(parede):
-                if dirX > 0:
-                    self.rect.right = parede.left
+        for _ in range(passos):
+            if dirX:
+                acumulado_x = self._resto_movimento_x + passo_x
+                deslocamento_x = round(acumulado_x)
+                self._resto_movimento_x = acumulado_x - deslocamento_x
+                self.rect.x += deslocamento_x
 
-                elif dirX < 0:
-                    self.rect.left = parede.right
+                for parede in colisoes:
+                    if self.rect.colliderect(parede):
+                        if dirX > 0:
+                            self.rect.right = parede.left
+                        else:
+                            self.rect.left = parede.right
+                        self._resto_movimento_x = 0.0
+            else:
+                self._resto_movimento_x = 0.0
 
-        self.rect.y += dirY
+            if dirY:
+                acumulado_y = self._resto_movimento_y + passo_y
+                deslocamento_y = round(acumulado_y)
+                self._resto_movimento_y = acumulado_y - deslocamento_y
+                self.rect.y += deslocamento_y
 
-        for parede in colisoes:
-            if self.rect.colliderect(parede):
-
-                if dirY > 0:
-                    self.rect.bottom = parede.top
-
-                elif dirY < 0:
-                    self.rect.top = parede.bottom
+                for parede in colisoes:
+                    if self.rect.colliderect(parede):
+                        if dirY > 0:
+                            self.rect.bottom = parede.top
+                        else:
+                            self.rect.top = parede.bottom
+                        self._resto_movimento_y = 0.0
+            else:
+                self._resto_movimento_y = 0.0
 
         self.pos_x = self.rect.x - 16
         self.pos_y = self.rect.y - 76
@@ -857,9 +891,9 @@ class Brito(Personagem):
             "baixo": pygame.K_s,
             "esquerda": pygame.K_a,
             "direita": pygame.K_d,
-            "pegar": pygame.K_z,
-            "largar": pygame.K_x,
-            "cortar": pygame.K_c
+            "pegar": pygame.K_f,
+            "largar": pygame.K_g,
+            "cortar": pygame.K_h
         }
         
         idle, walk, slip = self.caminhos_personagem("Brito", estilo)

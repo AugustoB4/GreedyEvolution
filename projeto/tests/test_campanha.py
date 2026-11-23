@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pygame
 
@@ -29,12 +29,17 @@ from interface_campanha import (
 from itens import Hamburguer
 from jogo import Jogo
 from pedido import (
+    DIFICULDADES_PEDIDO,
     PROBABILIDADES_PEDIDOS_POR_DIFICULDADE,
+    PROBABILIDADES_PEDIDOS_POR_FASE_LOCAL,
+    PedidoDificil,
     PedidoFacil,
     PedidoMedio,
+    PedidoPizzaDificil,
     PedidoPizzaMedio,
     PedidoSushiDificil,
     criar_pedido_ponderado,
+    probabilidades_pedidos_da_fase,
 )
 
 
@@ -85,6 +90,50 @@ class TestEstruturaCampanha(unittest.TestCase):
         self.assertEqual(pedido.produto_classe.__name__, "Sushi")
         self.assertEqual(sorteio.call_args.args[0][2].__name__, "PedidoSushiDificil")
         self.assertEqual(sorteio.call_args.kwargs["weights"], (10, 35, 55))
+
+    def test_probabilidades_por_fase_somam_cem_e_progridem_por_galaxia(self):
+        esperado = {
+            1: (70, 20, 10),
+            2: (65, 25, 10),
+            3: (60, 30, 10),
+            4: (55, 33, 12),
+            5: (50, 35, 15),
+        }
+        self.assertEqual(PROBABILIDADES_PEDIDOS_POR_FASE_LOCAL, esperado)
+        for indice_local, pesos in esperado.items():
+            self.assertEqual(sum(pesos), 100)
+            self.assertEqual(
+                probabilidades_pedidos_da_fase(indice_local), pesos
+            )
+
+        for fases in FASES_POR_GALAXIA.values():
+            pesos = [probabilidades_pedidos_da_fase(fase) for fase in fases]
+            self.assertTrue(all(sum(distribuicao) == 100 for distribuicao in pesos))
+            self.assertEqual(
+                [p[0] for p in pesos], sorted((p[0] for p in pesos), reverse=True)
+            )
+            self.assertEqual([p[1] for p in pesos], sorted(p[1] for p in pesos))
+            self.assertEqual([p[2] for p in pesos], sorted(p[2] for p in pesos))
+
+        self.assertEqual(probabilidades_pedidos_da_fase(FASES_CAMPANHA[3]), (70, 20, 10))
+
+    def test_sorteio_de_cada_pedido_usa_a_fase_e_preserva_a_cozinha(self):
+        casos = (
+            (FASES_CAMPANHA[0], PedidoFacil, (70, 20, 10), "fácil"),
+            (FASES_CAMPANHA[4], PedidoPizzaDificil, (65, 25, 10), "difícil"),
+            (FASES_CAMPANHA[11], PedidoSushiDificil, (50, 35, 15), "difícil"),
+        )
+        with patch(
+            "pedido.random.choices",
+            side_effect=[["fácil"], ["difícil"], ["difícil"]],
+        ) as sorteio:
+            for fase, classe, pesos, dificuldade in casos:
+                pedido = criar_pedido_ponderado(fase.tipo_pedido, fase)
+                self.assertIsInstance(pedido, classe)
+                self.assertEqual(pedido.dificuldade, dificuldade)
+                self.assertEqual(sorteio.call_args.kwargs["weights"], pesos)
+                self.assertEqual(sorteio.call_args.args[0], DIFICULDADES_PEDIDO)
+        self.assertEqual(sorteio.call_count, len(casos))
 
 
 class TestEstrelasEBonus(unittest.TestCase):
@@ -218,6 +267,48 @@ class TestPersistenciaCampanha(unittest.TestCase):
             self.assertEqual(progresso.melhor_classificacao(2), 0)
             self.assertEqual(progresso.dados["fases_desbloqueadas"], [1])
             self.assertFalse(progresso.fase_desbloqueada(12))
+
+    def test_migracao_de_tutorial_antigo_preserva_recordes_e_outros_marcadores(self):
+        with tempfile.TemporaryDirectory() as diretorio:
+            caminho = Path(diretorio) / "progresso.json"
+            dados_anteriores = {
+                "versao": 1,
+                "fases_desbloqueadas": [1],
+                "galaxias_desbloqueadas": [1],
+                "melhores_estrelas": {"1": 0, "2": 0},
+                "tutoriais_exibidos": {
+                    "1": True,
+                    "2": True,
+                    "3": False,
+                },
+                "campanha_concluida": False,
+            }
+            caminho.write_text(
+                json.dumps(dados_anteriores),
+                encoding="utf-8",
+            )
+
+            progresso = ProgressoCampanha(caminho)
+
+            self.assertEqual(progresso.dados["versao"], ProgressoCampanha.VERSAO)
+            self.assertFalse(progresso.tutorial_exibido(1))
+            self.assertTrue(progresso.tutorial_exibido(2))
+            self.assertFalse(progresso.tutorial_exibido(3))
+            self.assertEqual(progresso.melhor_classificacao(1), 0)
+            self.assertEqual(progresso.dados["fases_desbloqueadas"], [1])
+            # A leitura/migração em memória não altera o arquivo antes de uma
+            # gravação válida confirmada pelo próprio fluxo da campanha.
+            self.assertEqual(
+                json.loads(caminho.read_text(encoding="utf-8")),
+                dados_anteriores,
+            )
+
+            progresso.marcar_tutorial_exibido(1)
+            salvo = json.loads(caminho.read_text(encoding="utf-8"))
+            self.assertEqual(salvo["versao"], ProgressoCampanha.VERSAO)
+            self.assertTrue(salvo["tutoriais_exibidos"]["1"])
+            self.assertTrue(salvo["tutoriais_exibidos"]["2"])
+            self.assertEqual(salvo["melhores_estrelas"]["1"], 0)
 
     def test_desbloqueios_continuos_sem_recordes_nao_sao_confiaveis(self):
         with tempfile.TemporaryDirectory() as diretorio:
@@ -359,6 +450,25 @@ class TestEntregaDeCampanha(unittest.TestCase):
         self.assertEqual(jogo.fase.pontuacao, 0)
         self.assertEqual(jogo.fase.tempo, 45)
 
+    def test_novo_pedido_sorteia_apos_cada_entrega_e_usa_a_fase_atual(self):
+        jogo = self.criar_jogo_minimo()
+        with patch(
+            "jogo.criar_pedido_ponderado", return_value=PedidoFacil()
+        ) as sorteio:
+            jogo.processar_entrega(Hamburguer(0, 0))
+            jogo.processar_entrega(Hamburguer(0, 0, com_tomate=True))
+            self.assertEqual(sorteio.call_count, 2)
+
+            jogo.fase.atualizar(0.25)
+            self.assertEqual(sorteio.call_count, 2)
+
+            jogo.definicao_fase = FASES_CAMPANHA[4]
+            jogo.tipo_pedido = "pizza"
+            jogo.gerar_pedido()
+
+        self.assertEqual(sorteio.call_count, 3)
+        self.assertEqual(sorteio.call_args.args, ("pizza", FASES_CAMPANHA[4]))
+
     def test_pedido_incorreto_nao_avanca_a_reducao_do_bonus(self):
         jogo = self.criar_jogo_minimo()
         produto = Hamburguer(0, 0)
@@ -403,6 +513,29 @@ class TestEntregaDeCampanha(unittest.TestCase):
 
 
 class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
+    def test_tutorial_so_e_marcado_apos_confirmar_inicio_da_fase(self):
+        with tempfile.TemporaryDirectory() as diretorio:
+            progresso = ProgressoCampanha(Path(diretorio) / "progresso.json")
+            jogo = object.__new__(Jogo)
+            jogo.progresso_campanha = progresso
+            interface = SimpleNamespace(executar_tutorial=Mock())
+
+            for acao in ("campanha", "sair"):
+                with self.subTest(acao=acao):
+                    interface.executar_tutorial.return_value = acao
+                    self.assertEqual(
+                        jogo._tutorial_se_necessario(interface, 0), acao
+                    )
+                    self.assertFalse(progresso.tutorial_exibido(1))
+
+            interface.executar_tutorial.return_value = "iniciar"
+            self.assertEqual(jogo._tutorial_se_necessario(interface, 0), "iniciar")
+            self.assertTrue(progresso.tutorial_exibido(1))
+
+            chamadas = interface.executar_tutorial.call_count
+            self.assertEqual(jogo._tutorial_se_necessario(interface, 1), "iniciar")
+            self.assertEqual(interface.executar_tutorial.call_count, chamadas)
+
     def test_inicializacao_fixa_cozinha_dificuldade_e_pedidos_por_galaxia(self):
         with tempfile.TemporaryDirectory() as diretorio:
             progresso = ProgressoCampanha(Path(diretorio) / "progresso.json")
