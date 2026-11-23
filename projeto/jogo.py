@@ -175,15 +175,28 @@ class Jogo:
                     self.definicao_fase.numero,
                     estrelas,
                 )
+                persistido = getattr(
+                    self.progresso_campanha,
+                    "resultado_persistido",
+                    getattr(self.progresso_campanha, "erro_salvamento", None)
+                    is None,
+                )
                 self.resultado_fase = {
                     "resultado": "vitoria",
                     "estrelas": estrelas,
                     "melhor_classificacao": melhor,
                     "pontuacao": self.fase.pontuacao,
                     "tempo": self.fase.tempo,
-                    "persistido": getattr(
-                        self.progresso_campanha, "erro_salvamento", None
-                    ) is None,
+                    "persistido": persistido,
+                    "erro_salvamento": (
+                        None
+                        if persistido
+                        else getattr(
+                            self.progresso_campanha,
+                            "erro_salvamento",
+                            "Não foi possível confirmar o salvamento.",
+                        )
+                    ),
                 }
             else:
                 self.gerar_pedido()
@@ -530,8 +543,15 @@ class Jogo:
                 melhor = self.progresso_campanha.melhor_classificacao(
                     self.definicao_fase.numero
                 )
+                resultado_fase = getattr(self, "resultado_fase", None) or {}
+                resultado_persistido = (
+                    resultado_fase.get("persistido", True)
+                    if resultado == "vitoria"
+                    else True
+                )
                 proxima_desbloqueada = (
-                    self.indice_fase_campanha + 1 < TOTAL_FASES
+                    resultado_persistido
+                    and self.indice_fase_campanha + 1 < TOTAL_FASES
                     and self.progresso_campanha.fase_desbloqueada(
                         self.definicao_fase.numero + 1
                     )
@@ -550,8 +570,10 @@ class Jogo:
                     resultado == "vitoria",
                     proxima_desbloqueada,
                     campanha_concluida,
-                    erro_salvamento=getattr(
-                        self.progresso_campanha, "erro_salvamento", None
+                    erro_salvamento=(
+                        resultado_fase.get("erro_salvamento")
+                        if not resultado_persistido
+                        else None
                     ),
                 )
                 som_inicial.stop()
@@ -561,7 +583,11 @@ class Jogo:
                     break
                 if acao_resultado == "repetir":
                     continue
-                if acao_resultado == "avancar" and proxima_desbloqueada:
+                if (
+                    acao_resultado == "avancar"
+                    and proxima_desbloqueada
+                    and resultado_persistido
+                ):
                     indice_atual += 1
                     continue
                 break

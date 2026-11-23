@@ -138,6 +138,7 @@ class ProgressoCampanha:
     def __init__(self, caminho=None):
         self.caminho = Path(caminho) if caminho is not None else caminho_padrao_progresso()
         self.erro_salvamento = None
+        self.resultado_persistido = True
         self.dados = self._carregar()
 
     @staticmethod
@@ -197,7 +198,7 @@ class ProgressoCampanha:
                 continue
             if (
                 numero_fase < TOTAL_FASES
-                and padrao["melhores_estrelas"][str(numero_fase)] >= 2
+                and padrao["melhores_estrelas"][str(numero_fase)] >= 1
             ):
                 fases_desbloqueadas.append(numero_fase + 1)
 
@@ -210,7 +211,7 @@ class ProgressoCampanha:
         padrao["fases_desbloqueadas"] = fases_desbloqueadas
         padrao["galaxias_desbloqueadas"] = galaxias_desbloqueadas
         padrao["campanha_concluida"] = (
-            padrao["melhores_estrelas"][str(TOTAL_FASES)] >= 2
+            padrao["melhores_estrelas"][str(TOTAL_FASES)] >= 1
         )
         return padrao
 
@@ -269,11 +270,17 @@ class ProgressoCampanha:
         return True
 
     def registrar_resultado(self, numero_fase, estrelas):
-        if not 1 <= numero_fase <= TOTAL_FASES or not 0 <= estrelas <= 3:
+        if (
+            type(numero_fase) is not int
+            or not 1 <= numero_fase <= TOTAL_FASES
+            or type(estrelas) is not int
+            or not 1 <= estrelas <= 3
+        ):
             raise ValueError("Fase ou classificação fora dos limites da campanha")
         if not self.fase_desbloqueada(numero_fase):
             raise ValueError("Não é possível registrar resultado de fase bloqueada")
 
+        self.resultado_persistido = True
         dados_anteriores = self.dados
         dados_novos = copy.deepcopy(dados_anteriores)
         chave = str(numero_fase)
@@ -283,7 +290,7 @@ class ProgressoCampanha:
             dados_novos["melhores_estrelas"][chave] = estrelas
 
         desbloqueadas = set(dados_novos["fases_desbloqueadas"])
-        if estrelas >= 2 and numero_fase < TOTAL_FASES:
+        if estrelas >= 1 and numero_fase < TOTAL_FASES:
             desbloqueadas.add(numero_fase + 1)
 
         fases_ordenadas = sorted(desbloqueadas)
@@ -301,15 +308,18 @@ class ProgressoCampanha:
             dados_novos["galaxias_desbloqueadas"] = galaxias
             mudou = True
 
-        if numero_fase == TOTAL_FASES and estrelas >= 2:
-            if not dados_novos["campanha_concluida"]:
-                dados_novos["campanha_concluida"] = True
-                mudou = True
+        campanha_concluida = (
+            dados_novos["melhores_estrelas"][str(TOTAL_FASES)] >= 1
+        )
+        if dados_novos["campanha_concluida"] != campanha_concluida:
+            dados_novos["campanha_concluida"] = campanha_concluida
+            mudou = True
 
         if mudou:
             self.dados = dados_novos
             if not self.salvar():
                 self.dados = dados_anteriores
+                self.resultado_persistido = False
                 return melhor_anterior
         return max(melhor_anterior, estrelas)
 

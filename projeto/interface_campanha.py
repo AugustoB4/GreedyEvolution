@@ -57,10 +57,40 @@ class InterfaceCampanha:
         self.imagem_derrota = pygame.image.load(
             os.path.join(UI_DIR, "GameOver.png")
         ).convert_alpha()
+        self.imagens_botoes_resultado = {
+            "avancar": self._carregar_frames_botao_resultado("ButtonContinue.png"),
+            "repetir": self._carregar_frames_botao_resultado("ButtonRetry.png"),
+            "campanha": self._carregar_frames_botao_resultado("ButtonQuit.png"),
+        }
         self.galaxia_selecionada = 1
         self.rects_galaxias = {}
         self.rects_fases = {}
+        self.rects_botoes_resultado = {}
         self.rect_voltar = pygame.Rect(35, altura - 53, 190, 38)
+
+    def _carregar_frames_botao_resultado(self, nome):
+        spritesheet = pygame.image.load(
+            os.path.join(UI_DIR, nome)
+        ).convert_alpha()
+        if spritesheet.get_width() % 2:
+            raise ValueError(f"Spritesheet de botão inválido: {nome}")
+
+        largura_frame = spritesheet.get_width() // 2
+        altura_frame = spritesheet.get_height()
+        tamanho = (largura_frame * 2, altura_frame * 2)
+        return tuple(
+            pygame.transform.scale(
+                spritesheet.subsurface(
+                    pygame.Rect(indice * largura_frame, 0, largura_frame, altura_frame)
+                ).copy(),
+                tamanho,
+            )
+            for indice in range(2)
+        )
+
+    def _desenhar_botao_resultado(self, acao, rect, hover=False):
+        imagem = self.imagens_botoes_resultado[acao][1 if hover else 0]
+        self.tela.blit(imagem, rect)
 
     def _texto_centralizado(self, texto, fonte, cor, y, destino=None):
         destino = self.tela if destino is None else destino
@@ -279,32 +309,49 @@ class InterfaceCampanha:
         erro_salvamento=None,
     ):
         titulo = self.imagem_vitoria if venceu else self.imagem_derrota
-        titulo_largura = min(430, self.largura - 80)
+        titulo_largura = min(titulo.get_width(), self.largura - 80)
         titulo_altura = round(titulo.get_height() * titulo_largura / titulo.get_width())
-        titulo_escalado = pygame.transform.smoothscale(
-            titulo, (titulo_largura, titulo_altura)
+        titulo_escalado = (
+            titulo
+            if titulo.get_size() == (titulo_largura, titulo_altura)
+            else pygame.transform.scale(
+                titulo, (titulo_largura, titulo_altura)
+            )
         )
         botoes = []
-        if venceu and proxima_desbloqueada and not campanha_concluida:
-            botoes.append(("avancar", "AVANÇAR"))
-        if venceu and campanha_concluida:
-            botoes.append(("campanha", "VOLTAR À CAMPANHA"))
-            botoes.append(("repetir", "REPETIR FASE"))
-        elif venceu:
-            botoes.append(("repetir", "REPETIR FASE"))
-            botoes.append(("campanha", "CAMPANHA"))
-        else:
-            botoes.append(("repetir", "TENTAR NOVAMENTE"))
-            botoes.append(("campanha", "CAMPANHA"))
+        pode_avancar = (
+            venceu
+            and proxima_desbloqueada
+            and not campanha_concluida
+            and not erro_salvamento
+        )
+        if pode_avancar:
+            botoes.append("avancar")
+        botoes.extend(("repetir", "campanha"))
 
-        largura_botao = min(265, (self.largura - 60 - 18 * (len(botoes) - 1)) // len(botoes))
         espacamento = 18
-        largura_total = len(botoes) * largura_botao + (len(botoes) - 1) * espacamento
-        inicio_x = (self.largura - largura_total) // 2
-        rects = [
-            pygame.Rect(inicio_x + indice * (largura_botao + espacamento), self.altura - 84, largura_botao, 48)
-            for indice in range(len(botoes))
+        larguras_botoes = [
+            self.imagens_botoes_resultado[acao][0].get_width()
+            for acao in botoes
         ]
+        altura_botoes = max(
+            self.imagens_botoes_resultado[acao][0].get_height()
+            for acao in botoes
+        )
+        largura_total = sum(larguras_botoes) + (len(botoes) - 1) * espacamento
+        inicio_x = (self.largura - largura_total) // 2
+        y_botoes = self.altura - 84 + (48 - altura_botoes) // 2
+        self.rects_botoes_resultado = {}
+        x = inicio_x
+        for acao, largura in zip(botoes, larguras_botoes):
+            altura = self.imagens_botoes_resultado[acao][0].get_height()
+            self.rects_botoes_resultado[acao] = pygame.Rect(
+                x,
+                y_botoes + (altura_botoes - altura) // 2,
+                largura,
+                altura,
+            )
+            x += largura + espacamento
         tempo_segundos = max(0, int(tempo_restante))
         linhas = [
             f"GALÁXIA {definicao.galaxia}: {definicao.nome_galaxia}",
@@ -320,13 +367,19 @@ class InterfaceCampanha:
                 )
             )
             if campanha_concluida:
-                linhas.append("CAMPANHA DISPONÍVEL CONCLUÍDA")
+                linhas.append("CAMPANHA CONCLUÍDA")
+            elif erro_salvamento:
+                linhas.append("AVANÇO BLOQUEADO: SALVAMENTO PENDENTE")
             elif proxima_desbloqueada:
-                linhas.append("PRÓXIMA FASE DESBLOQUEADA")
+                proxima_fase = FASES_CAMPANHA[definicao.indice + 1]
+                if proxima_fase.galaxia != definicao.galaxia:
+                    linhas.append("NOVA GALÁXIA DESBLOQUEADA")
+                else:
+                    linhas.append("PRÓXIMA FASE DESBLOQUEADA")
             elif definicao.numero == TOTAL_FASES:
-                linhas.append("CONQUISTE 2 ESTRELAS PARA CONCLUIR CAMPANHA")
+                linhas.append("CAMPANHA AINDA NÃO CONCLUÍDA")
             else:
-                linhas.append("CONQUISTE 2 ESTRELAS PARA DESBLOQUEAR")
+                linhas.append("PRÓXIMA FASE AINDA BLOQUEADA")
         else:
             linhas.extend(
                 (
@@ -356,8 +409,12 @@ class InterfaceCampanha:
                 )
                 y += 30
             mouse = pygame.mouse.get_pos()
-            for (acao, texto), rect in zip(botoes, rects):
-                self._botao(rect, texto, hover=rect.collidepoint(mouse))
+            for acao, rect in self.rects_botoes_resultado.items():
+                self._desenhar_botao_resultado(
+                    acao,
+                    rect,
+                    hover=rect.collidepoint(mouse),
+                )
             pygame.display.flip()
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
@@ -365,6 +422,6 @@ class InterfaceCampanha:
                 if evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
                     return "campanha"
                 if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
-                    for (acao, _), rect in zip(botoes, rects):
+                    for acao, rect in self.rects_botoes_resultado.items():
                         if rect.collidepoint(evento.pos):
                             return acao

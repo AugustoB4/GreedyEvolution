@@ -224,9 +224,11 @@ class TestFase(unittest.TestCase):
         fase.desenhar(mapa_redimensionado)
 
         self.assertEqual(fase.hud_rects["pontuacao"].topleft, (18, 14))
+        self.assertEqual(posicoes_janela["tempo"].centerx, 500)
+        self.assertEqual(posicoes_janela["tempo"].bottom, 588)
         self.assertEqual(fase.hud_rects["tempo"].centerx, 504)
         self.assertEqual(fase.hud_rects["tempo"].bottom, 612)
-        self.assertEqual(
+        self.assertNotEqual(
             fase.hud_rects["tempo"].topleft,
             posicoes_janela["tempo"].topleft,
         )

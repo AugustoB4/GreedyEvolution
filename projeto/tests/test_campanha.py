@@ -17,6 +17,7 @@ from campanha import (
     GALAXIAS,
     GALAXIAS_EM_CONSTRUCAO,
     ProgressoCampanha,
+    TOTAL_FASES,
     TEMPO_MAXIMO_FASE,
     calcular_estrelas,
 )
@@ -213,33 +214,71 @@ class TestPersistenciaCampanha(unittest.TestCase):
             self.assertFalse(carregado.tutorial_exibido(2))
             self.assertTrue(carregado.tutorial_exibido(3))
 
-    def test_avanco_entre_galaxias_e_conclusao_somente_apos_12_com_dois_pontos(self):
+    def test_uma_estrela_avanca_entre_galaxias_e_conclui_apos_fase_12(self):
         with tempfile.TemporaryDirectory() as diretorio:
-            progresso = ProgressoCampanha(Path(diretorio) / "progresso.json")
+            caminho = Path(diretorio) / "progresso.json"
+            progresso = ProgressoCampanha(caminho)
             for numero in range(1, 12):
-                progresso.registrar_resultado(numero, 2)
+                progresso.registrar_resultado(numero, 1)
             self.assertTrue(progresso.galaxia_desbloqueada(2))
             self.assertTrue(progresso.galaxia_desbloqueada(3))
             self.assertFalse(progresso.dados["campanha_concluida"])
 
             progresso.registrar_resultado(12, 1)
-            self.assertFalse(progresso.dados["campanha_concluida"])
-            progresso.registrar_resultado(12, 2)
             self.assertTrue(progresso.dados["campanha_concluida"])
+            self.assertEqual(progresso.total_estrelas(), 12)
+            carregado = ProgressoCampanha(caminho)
+            self.assertEqual(carregado.dados["fases_desbloqueadas"], list(range(1, 13)))
+            self.assertEqual(carregado.dados["galaxias_desbloqueadas"], [1, 2, 3])
+            self.assertTrue(carregado.dados["campanha_concluida"])
+            self.assertEqual(carregado.total_estrelas(), 12)
 
-    def test_uma_estrela_nao_desbloqueia_e_nao_rebloqueia_progresso(self):
+    def test_resultado_de_uma_estrela_desbloqueia_sem_rebaixar_recordes(self):
         with tempfile.TemporaryDirectory() as diretorio:
             progresso = ProgressoCampanha(Path(diretorio) / "progresso.json")
-            progresso.registrar_resultado(1, 2)
             progresso.registrar_resultado(1, 1)
             self.assertTrue(progresso.fase_desbloqueada(2))
-            self.assertEqual(progresso.melhor_classificacao(1), 2)
+            self.assertEqual(progresso.melhor_classificacao(1), 1)
             self.assertFalse(progresso.fase_desbloqueada(3))
 
+            progresso.registrar_resultado(2, 1)
+            self.assertTrue(progresso.fase_desbloqueada(3))
             progresso.registrar_resultado(1, 3)
-            progresso.registrar_resultado(1, 1)
+            progresso.registrar_resultado(1, 2)
             self.assertTrue(progresso.fase_desbloqueada(2))
             self.assertEqual(progresso.melhor_classificacao(1), 3)
+            self.assertEqual(progresso.total_estrelas(), 4)
+
+    def test_registrar_resultado_exige_vitoria_com_uma_a_tres_estrelas(self):
+        with tempfile.TemporaryDirectory() as diretorio:
+            progresso = ProgressoCampanha(Path(diretorio) / "progresso.json")
+            for estrelas in (0, 4, -1, 1.5, True):
+                with self.subTest(estrelas=estrelas):
+                    with self.assertRaises(ValueError):
+                        progresso.registrar_resultado(1, estrelas)
+
+            for numero_fase, estrelas in ((0, 1), (TOTAL_FASES + 1, 1), (True, 1)):
+                with self.subTest(numero_fase=numero_fase):
+                    with self.assertRaises(ValueError):
+                        progresso.registrar_resultado(numero_fase, estrelas)
+
+            self.assertEqual(progresso.total_estrelas(), 0)
+
+    def test_total_e_percentual_usam_melhores_estrelas_sem_somar_repeticoes(self):
+        with tempfile.TemporaryDirectory() as diretorio:
+            progresso = ProgressoCampanha(Path(diretorio) / "progresso.json")
+            for numero_fase in range(1, TOTAL_FASES + 1):
+                progresso.registrar_resultado(numero_fase, 1)
+
+            self.assertEqual(progresso.total_estrelas(), 12)
+            self.assertEqual(progresso.percentual_campanha(), 33)
+
+            for numero_fase in range(1, TOTAL_FASES + 1):
+                progresso.registrar_resultado(numero_fase, 3)
+                progresso.registrar_resultado(numero_fase, 2)
+
+            self.assertEqual(progresso.total_estrelas(), 36)
+            self.assertEqual(progresso.percentual_campanha(), 100)
 
     def test_arquivo_ausente_ou_corrompido_usa_estado_seguro(self):
         with tempfile.TemporaryDirectory() as diretorio:
@@ -329,7 +368,7 @@ class TestPersistenciaCampanha(unittest.TestCase):
             self.assertEqual(progresso.total_estrelas(), 0)
             self.assertFalse(progresso.dados["campanha_concluida"])
 
-    def test_recordes_de_fases_bloqueadas_sao_ignorados_e_recordes_validos_reconstroem(self):
+    def test_reconstrucao_aceita_recordes_de_uma_estrela_em_sequencia(self):
         with tempfile.TemporaryDirectory() as diretorio:
             caminho = Path(diretorio) / "progresso.json"
             caminho.write_text(
@@ -343,10 +382,10 @@ class TestPersistenciaCampanha(unittest.TestCase):
 
             progresso = ProgressoCampanha(caminho)
 
-            self.assertEqual(progresso.dados["fases_desbloqueadas"], [1, 2])
+            self.assertEqual(progresso.dados["fases_desbloqueadas"], [1, 2, 3, 4])
             self.assertEqual(progresso.melhor_classificacao(1), 2)
             self.assertEqual(progresso.melhor_classificacao(2), 1)
-            self.assertEqual(progresso.melhor_classificacao(3), 0)
+            self.assertEqual(progresso.melhor_classificacao(3), 3)
             self.assertEqual(progresso.melhor_classificacao(12), 0)
             self.assertFalse(progresso.dados["campanha_concluida"])
 
@@ -379,17 +418,18 @@ class TestPersistenciaCampanha(unittest.TestCase):
             with self.subTest(erro=erro.__name__), tempfile.TemporaryDirectory() as diretorio:
                 caminho = Path(diretorio) / "progresso.json"
                 progresso = ProgressoCampanha(caminho)
-                progresso.registrar_resultado(1, 2)
+                progresso.registrar_resultado(1, 1)
                 conteudo_anterior = caminho.read_bytes()
                 dados_anteriores = json.loads(conteudo_anterior)
 
                 with patch("campanha.os.replace", side_effect=erro("bloqueado")):
-                    melhor = progresso.registrar_resultado(2, 2)
+                    melhor = progresso.registrar_resultado(2, 1)
 
                 self.assertEqual(melhor, 0)
                 self.assertEqual(progresso.dados, dados_anteriores)
                 self.assertEqual(caminho.read_bytes(), conteudo_anterior)
                 self.assertTrue(progresso.erro_salvamento)
+                self.assertFalse(progresso.resultado_persistido)
                 self.assertFalse(progresso.fase_desbloqueada(3))
                 self.assertEqual(
                     list(Path(diretorio).glob(".progresso.json.*.tmp")), []
@@ -567,6 +607,15 @@ class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
             for imagem in interface.imagens_tutorial.values():
                 self.assertGreater(imagem.get_width(), 0)
                 self.assertGreater(imagem.get_height(), 0)
+            self.assertEqual(interface.imagem_vitoria.get_size(), (273, 96))
+            self.assertEqual(interface.imagem_derrota.get_size(), (273, 96))
+            self.assertEqual(
+                set(interface.imagens_botoes_resultado),
+                {"avancar", "repetir", "campanha"},
+            )
+            for quadros in interface.imagens_botoes_resultado.values():
+                self.assertEqual(len(quadros), 2)
+                self.assertEqual(quadros[0].get_size(), quadros[1].get_size())
 
             clique_fase_bloqueada = pygame.event.Event(
                 pygame.MOUSEBUTTONDOWN,
@@ -637,7 +686,7 @@ class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
                     "sair",
                 )
 
-    def test_resultado_final_explica_duas_estrelas_e_falha_de_salvamento(self):
+    def test_resultado_final_explica_avanco_bloqueado_e_falha_de_salvamento(self):
         interface = InterfaceCampanha(pygame.Surface((1000, 600)), 1000, 600)
         textos = []
         interface._texto_centralizado = lambda texto, *args, **kwargs: textos.append(texto)
@@ -656,9 +705,79 @@ class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
                 "sair",
             )
 
-        self.assertIn("CONQUISTE 2 ESTRELAS PARA CONCLUIR CAMPANHA", textos)
+        self.assertIn("AVANÇO BLOQUEADO: SALVAMENTO PENDENTE", textos)
         self.assertIn("ERRO AO SALVAR O PROGRESSO", textos)
         self.assertIn("ESTA TENTATIVA NÃO FOI PERSISTIDA", textos)
+
+    def test_botoes_de_resultado_usam_sprites_hitboxes_e_bloqueiam_avanco_sem_save(self):
+        interface = InterfaceCampanha(pygame.Surface((1000, 600)), 1000, 600)
+        chamadas_render = []
+        interface._desenhar_botao_resultado = lambda acao, rect, hover=False: (
+            chamadas_render.append((acao, rect.copy(), hover))
+        )
+        interface._botao = Mock(side_effect=AssertionError("botão genérico"))
+
+        for alvo in ("avancar", "repetir", "campanha"):
+            with self.subTest(acao=alvo):
+                chamadas_render.clear()
+
+                def eventos():
+                    posicao = interface.rects_botoes_resultado[alvo].center
+                    return [pygame.event.Event(
+                        pygame.MOUSEBUTTONDOWN,
+                        {"button": 1, "pos": posicao},
+                    )]
+
+                def posicao_mouse():
+                    return interface.rects_botoes_resultado[alvo].center
+
+                with (
+                    patch("interface_campanha.pygame.event.get", side_effect=eventos),
+                    patch("interface_campanha.pygame.mouse.get_pos", side_effect=posicao_mouse),
+                    patch("interface_campanha.pygame.display.flip"),
+                ):
+                    acao = interface.executar_resultado(
+                        FASES_CAMPANHA[0], 40, 30, 1, 1,
+                        True, True, False,
+                    )
+
+                self.assertEqual(acao, alvo)
+                self.assertTrue(
+                    any(nome == alvo and hover for nome, _, hover in chamadas_render)
+                )
+                interface._botao.assert_not_called()
+
+        chamadas_render.clear()
+        alvo = "repetir"
+
+        def eventos_sem_persistencia():
+            posicao = interface.rects_botoes_resultado[alvo].center
+            return [pygame.event.Event(
+                pygame.MOUSEBUTTONDOWN,
+                {"button": 1, "pos": posicao},
+            )]
+
+        with (
+            patch(
+                "interface_campanha.pygame.event.get",
+                side_effect=eventos_sem_persistencia,
+            ),
+            patch(
+                "interface_campanha.pygame.mouse.get_pos",
+                side_effect=lambda: interface.rects_botoes_resultado[alvo].center,
+            ),
+            patch("interface_campanha.pygame.display.flip"),
+        ):
+            acao = interface.executar_resultado(
+                FASES_CAMPANHA[0], 40, 30, 1, 0,
+                True, True, False,
+                erro_salvamento="acesso negado",
+            )
+
+        self.assertEqual(acao, "repetir")
+        self.assertNotIn("avancar", interface.rects_botoes_resultado)
+        self.assertIn("repetir", interface.rects_botoes_resultado)
+        self.assertIn("campanha", interface.rects_botoes_resultado)
 
     def test_fluxo_simulado_avanca_sequencialmente_pelas_12_fases(self):
         with tempfile.TemporaryDirectory() as diretorio:
@@ -712,9 +831,9 @@ class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
             def concluir_fase():
                 jogo.fase.pontuacao = 80
                 jogo.fase.tempo = 50
-                jogo.fase.encerrar("vitoria", 2)
+                jogo.fase.encerrar("vitoria", 1)
                 jogo.progresso_campanha.registrar_resultado(
-                    jogo.definicao_fase.numero, 2
+                    jogo.definicao_fase.numero, 1
                 )
                 return "vitoria"
 
@@ -729,6 +848,170 @@ class TestInicializacaoEInterfaceCampanha(unittest.TestCase):
             self.assertEqual(resultados, list(range(1, 13)))
             self.assertEqual(tutoriais, [1, 2, 3])
             self.assertTrue(jogo.progresso_campanha.dados["campanha_concluida"])
+            self.assertEqual(jogo.progresso_campanha.total_estrelas(), 12)
+            self.assertEqual(
+                ProgressoCampanha(jogo.caminho_progresso).dados["fases_desbloqueadas"],
+                list(range(1, 13)),
+            )
+
+    def test_retry_e_derrota_preservam_progresso_antes_de_voltar_a_selecao(self):
+        with tempfile.TemporaryDirectory() as diretorio:
+            jogo = object.__new__(Jogo)
+            jogo.tela = pygame.Surface((1000, 600))
+            jogo.largura = 1000
+            jogo.altura = 600
+            jogo.rodando = True
+            jogo.caminho_progresso = Path(diretorio) / "progresso.json"
+            jogo.progresso_campanha = ProgressoCampanha(jogo.caminho_progresso)
+            acoes = iter(("repetir", "campanha"))
+            indices_carregados = []
+            tutoriais = []
+            resultados = []
+
+            class InterfaceSimulada:
+                selecoes = 0
+
+                def __init__(self, *_):
+                    pass
+
+                def executar_selecao(self, progresso):
+                    type(self).selecoes += 1
+                    if type(self).selecoes == 1:
+                        return "fase", 0
+                    return "sair", None
+
+                def executar_tutorial(self, galaxia):
+                    tutoriais.append(galaxia)
+                    return "iniciar"
+
+                def executar_resultado(
+                    self, definicao, pontuacao, tempo, estrelas, melhor,
+                    venceu, proxima_desbloqueada, campanha_concluida,
+                    erro_salvamento=None,
+                ):
+                    resultados.append((venceu, estrelas, proxima_desbloqueada))
+                    return next(acoes)
+
+            def carregar(indice):
+                indices_carregados.append(indice)
+                jogo.indice_fase_campanha = indice
+                jogo.definicao_fase = FASES_CAMPANHA[indice]
+                jogo.fase = Fase(tempo=60, definicao=jogo.definicao_fase)
+                jogo.player1 = SimpleNamespace(parar_som_andar=lambda: None)
+                jogo.player2 = SimpleNamespace(parar_som_andar=lambda: None)
+
+            execucoes = iter(("vitoria", "derrota"))
+
+            def executar_fase():
+                resultado = next(execucoes)
+                if resultado == "vitoria":
+                    jogo.fase.encerrar("vitoria", 1)
+                    melhor = jogo.progresso_campanha.registrar_resultado(1, 1)
+                    jogo.resultado_fase = {
+                        "resultado": "vitoria",
+                        "estrelas": 1,
+                        "melhor_classificacao": melhor,
+                        "persistido": jogo.progresso_campanha.resultado_persistido,
+                    }
+                else:
+                    jogo.fase.encerrar("derrota", 0)
+                    jogo.resultado_fase = {"resultado": "derrota", "estrelas": 0}
+                return resultado
+
+            with (
+                patch("jogo.Menu", return_value=SimpleNamespace(executar=lambda: "start")),
+                patch("jogo.InterfaceCampanha", InterfaceSimulada),
+                patch("jogo.som_inicial"),
+                patch("jogo.som_face"),
+                patch("jogo.pygame.quit"),
+                patch.object(jogo, "_carregar_fase_campanha", side_effect=carregar),
+                patch.object(jogo, "_executar_fase_campanha", side_effect=executar_fase),
+            ):
+                jogo._iniciar_campanha()
+
+            self.assertEqual(indices_carregados, [0, 0])
+            self.assertEqual(tutoriais, [1])
+            self.assertEqual(resultados, [(True, 1, True), (False, 0, True)])
+            carregado = ProgressoCampanha(jogo.caminho_progresso)
+            self.assertEqual(carregado.melhor_classificacao(1), 1)
+            self.assertTrue(carregado.fase_desbloqueada(2))
+            self.assertFalse(carregado.fase_desbloqueada(3))
+            self.assertEqual(carregado.total_estrelas(), 1)
+
+    def test_falha_de_salvamento_impede_avanco_mesmo_se_a_interface_o_solicitar(self):
+        with tempfile.TemporaryDirectory() as diretorio:
+            jogo = object.__new__(Jogo)
+            jogo.tela = pygame.Surface((1000, 600))
+            jogo.largura = 1000
+            jogo.altura = 600
+            jogo.rodando = True
+            jogo.caminho_progresso = Path(diretorio) / "progresso.json"
+            jogo.progresso_campanha = ProgressoCampanha(jogo.caminho_progresso)
+            jogo.progresso_campanha.marcar_tutorial_exibido(1)
+            indices_carregados = []
+            resultado_recebido = []
+
+            class InterfaceSimulada:
+                selecoes = 0
+
+                def __init__(self, *_):
+                    pass
+
+                def executar_selecao(self, progresso):
+                    type(self).selecoes += 1
+                    if type(self).selecoes == 1:
+                        return "fase", 0
+                    return "sair", None
+
+                def executar_resultado(
+                    self, definicao, pontuacao, tempo, estrelas, melhor,
+                    venceu, proxima_desbloqueada, campanha_concluida,
+                    erro_salvamento=None,
+                ):
+                    resultado_recebido.append(
+                        (proxima_desbloqueada, campanha_concluida, erro_salvamento)
+                    )
+                    return "avancar"
+
+            def carregar(indice):
+                indices_carregados.append(indice)
+                jogo.indice_fase_campanha = indice
+                jogo.definicao_fase = FASES_CAMPANHA[indice]
+                jogo.fase = Fase(tempo=60, definicao=jogo.definicao_fase)
+                jogo.player1 = SimpleNamespace(parar_som_andar=lambda: None)
+                jogo.player2 = SimpleNamespace(parar_som_andar=lambda: None)
+
+            def executar_fase():
+                jogo.fase.encerrar("vitoria", 1)
+                melhor = jogo.progresso_campanha.registrar_resultado(1, 1)
+                jogo.resultado_fase = {
+                    "resultado": "vitoria",
+                    "estrelas": 1,
+                    "melhor_classificacao": melhor,
+                    "persistido": jogo.progresso_campanha.resultado_persistido,
+                    "erro_salvamento": jogo.progresso_campanha.erro_salvamento,
+                }
+                return "vitoria"
+
+            with (
+                patch("jogo.Menu", return_value=SimpleNamespace(executar=lambda: "start")),
+                patch("jogo.InterfaceCampanha", InterfaceSimulada),
+                patch("jogo.som_inicial"),
+                patch("jogo.som_face"),
+                patch("jogo.pygame.quit"),
+                patch("campanha.os.replace", side_effect=PermissionError("negado")),
+                patch.object(jogo, "_carregar_fase_campanha", side_effect=carregar),
+                patch.object(jogo, "_executar_fase_campanha", side_effect=executar_fase),
+            ):
+                jogo._iniciar_campanha()
+
+            self.assertEqual(indices_carregados, [0])
+            self.assertEqual(len(resultado_recebido), 1)
+            self.assertFalse(resultado_recebido[0][0])
+            self.assertFalse(resultado_recebido[0][1])
+            self.assertIn("negado", resultado_recebido[0][2])
+            self.assertFalse(jogo.progresso_campanha.fase_desbloqueada(2))
+            self.assertFalse(jogo.progresso_campanha.dados["campanha_concluida"])
 
 
 if __name__ == "__main__":
